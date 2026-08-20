@@ -1,0 +1,17 @@
+@extends('layouts.report')
+@section('title', 'Individual Monthly Report - '.$period['label'])
+@section('content')
+<header class="masthead"><h1>Busitema University</h1><p class="system">Centralized Library Staff Performance System</p><h2>Individual Monthly Performance Report</h2></header>
+<table class="meta"><tr><td><span class="label">Report Code</span>{{ $report?->report_code ?? 'Draft — not assigned' }}</td><td><span class="label">Status</span><span class="badge">{{ App\Models\MonthlyReport::label($status) }}</span></td><td colspan="2"><span class="label">Reporting Period</span>{{ $period['label'] }}</td></tr><tr>
+@foreach([['Staff',$staff['name']],['Position',$staff['position']],['Campus',$staff['campus']],['Library',$staff['library']]] as [$label,$value])<td><span class="label">{{ $label }}</span>{{ $value ?: '—' }}</td>@endforeach
+</tr><tr><td colspan="2"><span class="label">Supervisor</span>{{ $staff['supervisor'] ?: '—' }}</td><td colspan="2"><span class="label">Data Basis</span>{{ in_array($status, [App\Models\MonthlyReport::STATUS_PENDING_REVIEW, App\Models\MonthlyReport::STATUS_APPROVED], true) ? 'Frozen submitted snapshot' : 'Current reporting-period data' }}</td></tr></table>
+<h3>Performance Summary</h3><table class="summary"><tr>
+@foreach([['Total Hours',$performance['total_hours']],['Days Reported',$performance['days_reported']],['Tasks Assigned',$performance['tasks_assigned']],['Tasks Completed',$performance['tasks_completed']],['Pending Tasks',$performance['pending_tasks']],['Overdue Tasks',$performance['overdue_tasks']],['Completion Rate',number_format($performance['completion_rate'],1).'%'],['Project Performance',number_format($performance['project_performance'],1).'%']] as [$label,$value])
+<td><span class="label">{{ $label }}</span><span class="value">{{ $value }}</span></td>@if($loop->iteration % 4 === 0)</tr>@if(!$loop->last)<tr>@endif @endif @endforeach
+</table>
+<h3>Staff Narrative</h3>
+@foreach(['key_achievements'=>'Key Achievements','challenges'=>'Challenges','corrective_actions'=>'Corrective Actions','support_required'=>'Support Required','planned_activities_next_month'=>'Planned Activities / Follow-up'] as $key=>$title)<div class="avoid-break"><strong>{{ $title }}</strong><ul>@forelse($narrative[$key] as $item)<li>{{ $item }}</li>@empty<li class="muted">No information recorded.</li>@endforelse</ul></div>@endforeach
+@if($report)<h3>Submission and Review</h3><table class="meta"><tr><td><span class="label">Submitted By</span>{{ $report->submitter?->name ?: '—' }}</td><td><span class="label">Submitted At</span>{{ $report->submitted_at?->format('d F Y, h:i A') ?: '—' }}</td><td><span class="label">Reviewer</span>{{ $report->reviewer?->name ?: '—' }}</td><td><span class="label">Reviewed At</span>{{ $report->reviewed_at?->format('d F Y, h:i A') ?: '—' }}</td></tr><tr><td colspan="2"><span class="label">Approval Remark</span>{{ $report->approval_remark ?: '—' }}</td><td colspan="2"><span class="label">Correction Reason</span>{{ $report->correction_reason ?: '—' }}</td></tr></table>
+@if($report->activities->isNotEmpty())<h3>Report History</h3><table class="data"><thead><tr><th>Date</th><th>Event</th><th>By</th><th>Summary</th></tr></thead><tbody>@foreach($report->activities->sortBy('created_at') as $activity)<tr><td>{{ $activity->created_at->format('d M Y, h:i A') }}</td><td>{{ $activity->event_label }}</td><td>{{ $activity->user?->name }}</td><td>{{ $activity->description }}</td></tr>@endforeach</tbody></table>@endif
+@endif
+@endsection
