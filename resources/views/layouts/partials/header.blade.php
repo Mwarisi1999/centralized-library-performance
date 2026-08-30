@@ -1,5 +1,6 @@
 @php
     $headerUser = auth()->user();
+    $headerUser->loadMissing('staffProfile');
     $nameParts = collect(preg_split('/\s+/', trim($headerUser->name)))->filter()->values();
     $initials = str($nameParts->first() ?? '?')->substr(0, 1)
         .($nameParts->count() > 1 ? str($nameParts->last())->substr(0, 1) : '');
@@ -20,7 +21,13 @@
 
         <div class="relative" data-user-menu>
             <button type="button" data-user-menu-button class="flex items-center gap-3 rounded-xl p-1.5 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-600" aria-expanded="false" aria-haspopup="menu">
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold uppercase text-emerald-800">{{ $initials }}</span>
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-busitema-blue/10 text-sm font-bold uppercase text-busitema-blue">
+                    @if($headerUser->staffProfile?->profile_photo_path && $headerUser->hasAnyRole(['Staff', 'Intern']))
+                        <img src="{{ route('profile.photo') }}?v={{ $headerUser->staffProfile->updated_at?->timestamp }}" alt="" class="h-full w-full object-cover">
+                    @else
+                        {{ $initials }}
+                    @endif
+                </span>
                 <span class="hidden min-w-0 sm:block">
                     <span class="block max-w-48 truncate text-sm font-semibold text-slate-800">{{ $headerUser->name }}</span>
                     <span class="block max-w-48 truncate text-xs text-slate-500">{{ $headerUser->getRoleNames()->join(', ') ?: 'User' }}</span>
@@ -33,10 +40,9 @@
                     <p class="truncate text-sm font-semibold text-slate-800">{{ $headerUser->name }}</p>
                     <p class="mt-1 truncate text-xs text-slate-500">{{ $headerUser->getRoleNames()->join(', ') ?: 'User' }}</p>
                 </div>
-                <div class="flex items-center justify-between px-4 py-2.5 text-sm text-slate-400" aria-disabled="true">
-                    <span>My Profile</span>
-                    <span class="text-[9px] font-bold uppercase tracking-wider">Soon</span>
-                </div>
+                @if($headerUser->hasAnyRole(['Staff', 'Intern']))
+                    <a href="{{ route('profile.show') }}" class="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-busitema-blue" role="menuitem">My Profile</a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full px-4 py-2.5 text-left text-sm font-semibold text-red-700 hover:bg-red-50" role="menuitem">Sign out</button>

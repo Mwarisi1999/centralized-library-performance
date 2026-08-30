@@ -17,6 +17,13 @@ class StaffProfile extends Model
         'position_id',
         'supervisor_id',
         'phone',
+        'gender',
+        'date_of_birth',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'emergency_contact_relationship',
+        'profile_photo_path',
         'employment_type',
         'start_date',
         'status',
@@ -24,6 +31,7 @@ class StaffProfile extends Model
 
     protected $casts = [
         'start_date' => 'date',
+        'date_of_birth' => 'date',
     ];
 
     public function user()

@@ -10,6 +10,7 @@ use App\Http\Controllers\IndividualMonthlyReportController;
 use App\Http\Controllers\IndividualMonthlyReportExportController;
 use App\Http\Controllers\MonthlyReportReviewController;
 use App\Http\Controllers\PrintableTimesheetController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
@@ -65,6 +66,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/weekly-activities', WeeklyActivityController::class)->name('weekly-activities.index');
         Route::get('/task-tracker', TaskTrackerController::class)->name('task-tracker.index');
         Route::get('/printable-timesheet', PrintableTimesheetController::class)->name('printable-timesheet.index');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
     });
     Route::get('/my-work/timesheet', [WorkEntryController::class, 'timesheet'])->name('my-work.timesheet');
     Route::get('/my-work/timesheet/print', [TimesheetReportController::class, 'print'])->name('my-work.timesheet.print');

@@ -1,6 +1,7 @@
 import './dashboard-charts';
 import './campus-dashboard-charts';
 import './university-dashboard-charts';
+import './weekly-activities';
 
 const sidebar = document.querySelector('#app-sidebar');
 const sidebarOverlay = document.querySelector('#sidebar-overlay');

@@ -71,6 +71,7 @@
         @endif
         @if($isStaffOrIntern)
             @include('layouts.partials.sidebar-item', ['label' => 'Printable Timesheet', 'route' => 'printable-timesheet.index', 'active' => request()->routeIs('printable-timesheet.*') || request()->routeIs('my-work.timesheet.print')])
+            @include('layouts.partials.sidebar-item', ['label' => 'Profile', 'route' => 'profile.show', 'active' => request()->routeIs('profile.*')])
         @endif
         @if($canReviewReports)
             @include('layouts.partials.sidebar-item', ['label' => 'Reports Awaiting My Review', 'route' => 'monthly-reports.reviews.index', 'active' => request()->routeIs('monthly-reports.*')])

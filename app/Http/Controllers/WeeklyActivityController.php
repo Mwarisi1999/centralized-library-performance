@@ -44,12 +44,15 @@ class WeeklyActivityController extends Controller
                 'is_weekday' => $date->isWeekday(),
                 'entries' => $dayEntries,
                 'minutes' => (int) $dayEntries->sum('duration_minutes'),
+                'statuses' => $dayEntries->map(fn (WorkEntry $entry) => $this->displayStatus($entry->activity_status)),
             ];
         });
 
         return view('weekly-activities.index', [
             'month' => $month,
             'year' => $year,
+            'years' => collect(range(today()->year + 1, today()->year - 5))
+                ->push($year)->unique()->sortDesc()->values(),
             'weeks' => $weeks,
             'selectedWeek' => $selectedWeek,
             'days' => $days,
@@ -91,5 +94,15 @@ class WeeklyActivityController extends Controller
         }
 
         return 1;
+    }
+
+    private function displayStatus(?string $status): array
+    {
+        return match ($status) {
+            'completed' => ['label' => 'Completed', 'dot' => 'bg-emerald-500'],
+            'in_progress' => ['label' => 'In progress', 'dot' => 'bg-amber-500'],
+            'blocked' => ['label' => 'Blocked', 'dot' => 'bg-blue-500'],
+            default => ['label' => 'Not started', 'dot' => 'bg-slate-400'],
+        };
     }
 }

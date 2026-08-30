@@ -63,6 +63,18 @@ class StaffInternModulesTest extends TestCase
         $this->actingAs($user)->get(route('printable-timesheet.index', ['month' => 8, 'year' => 2026]))->assertSee('Integrated working module.');
     }
 
+    public function test_weekly_calendar_recalculates_weeks_for_the_selected_month(): void
+    {
+        $user = $this->user('Staff');
+
+        $this->actingAs($user)
+            ->get(route('weekly-activities.index', ['month' => 3, 'year' => 2026, 'week' => 6]))
+            ->assertOk()
+            ->assertSee('30 Mar – 5 Apr 2026')
+            ->assertSee('data-weekly-day-open', false)
+            ->assertSee('No activity');
+    }
+
     private function user(string $role): User
     {
         $user = User::factory()->create(['account_status' => 'active']);
