@@ -151,10 +151,12 @@ class WorkEntryController extends Controller
             ...$validated,
             'entry_code' => $entryCode,
             'user_id' => $request->user()->id,
+            'priority' => $validated['priority'] ?? 'medium',
+            'activity_status' => $validated['activity_status'] ?? 'in_progress',
             'duration_minutes' => $durationMinutes,
         ])));
 
-        return redirect()->route('my-work.index')->with('success', 'Daily work entry recorded successfully.');
+        return redirect()->route('my-work.index')->with('success', 'Daily activity recorded successfully.');
     }
 
     public function show(WorkEntry $workEntry)

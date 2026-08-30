@@ -4,6 +4,233 @@
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Source Sans Variable', 'Source Sans 3', 'Source Sans Pro', Calibri, 'Open Sans', Helvetica, Arial, sans-serif;
+
+    /* UPAMS brand palette */
+    --color-busitema-navy: #001f3f;
+    --color-busitema-blue: #1e73be;
+    --color-busitema-deep-blue: #13294b;
+    --color-busitema-gold: #f9d028;
+    --color-busitema-yellow: #feca3e;
+    --color-black: #010101;
+    --color-white: #ffffff;
+    --color-body: #6b6375;
+    --color-heading: #08060d;
+    --color-border: #e5e4e7;
+    --color-page: #f5f8fc;
+
+    /* Existing neutral utilities now resolve to the UPAMS system. */
+    --color-slate-50: #f5f8fc;
+    --color-slate-100: #f5f8fc;
+    --color-slate-200: #e5e4e7;
+    --color-slate-300: #e5e4e7;
+    --color-slate-400: #6b6375;
+    --color-slate-500: #6b6375;
+    --color-slate-600: #6b6375;
+    --color-slate-700: #13294b;
+    --color-slate-800: #13294b;
+    --color-slate-900: #08060d;
+    --color-slate-950: #001f3f;
+
+    --color-gray-50: #f5f8fc;
+    --color-gray-100: #f5f8fc;
+    --color-gray-200: #e5e4e7;
+    --color-gray-300: #e5e4e7;
+    --color-gray-400: #6b6375;
+    --color-gray-500: #6b6375;
+    --color-gray-600: #6b6375;
+    --color-gray-700: #13294b;
+    --color-gray-800: #13294b;
+    --color-gray-900: #08060d;
+    --color-gray-950: #001f3f;
+
+    /* The former green action scale is intentionally remapped to brand blue. */
+    --color-emerald-50: #f5f8fc;
+    --color-emerald-100: #f5f8fc;
+    --color-emerald-200: #e5e4e7;
+    --color-emerald-300: #feca3e;
+    --color-emerald-400: #f9d028;
+    --color-emerald-500: #1e73be;
+    --color-emerald-600: #1e73be;
+    --color-emerald-700: #1e73be;
+    --color-emerald-800: #1e73be;
+    --color-emerald-900: #13294b;
+    --color-emerald-950: #001f3f;
+
+    --color-blue-50: #f5f8fc;
+    --color-blue-100: #f5f8fc;
+    --color-blue-200: #e5e4e7;
+    --color-blue-300: #1e73be;
+    --color-blue-400: #1e73be;
+    --color-blue-500: #1e73be;
+    --color-blue-600: #1e73be;
+    --color-blue-700: #1e73be;
+    --color-blue-800: #13294b;
+    --color-blue-900: #001f3f;
+    --color-blue-950: #001f3f;
+
+    --color-green-50: #f5f8fc;
+    --color-green-100: #f5f8fc;
+    --color-green-200: #e5e4e7;
+    --color-green-500: #1e73be;
+    --color-green-600: #1e73be;
+    --color-green-700: #13294b;
+    --color-green-800: #13294b;
+    --color-green-900: #001f3f;
+
+    --color-indigo-50: #f5f8fc;
+    --color-indigo-100: #f5f8fc;
+    --color-indigo-200: #e5e4e7;
+    --color-indigo-500: #1e73be;
+    --color-indigo-600: #1e73be;
+    --color-indigo-700: #13294b;
+    --color-indigo-800: #13294b;
+    --color-indigo-900: #001f3f;
+
+    --color-amber-50: #f5f8fc;
+    --color-amber-100: #feca3e;
+    --color-amber-200: #feca3e;
+    --color-amber-300: #feca3e;
+    --color-amber-400: #f9d028;
+    --color-amber-500: #f9d028;
+    --color-amber-600: #f9d028;
+    --color-amber-700: #13294b;
+    --color-amber-800: #13294b;
+    --color-amber-900: #001f3f;
+    --color-amber-950: #001f3f;
+
+    --color-yellow-50: #f5f8fc;
+    --color-yellow-100: #feca3e;
+    --color-yellow-200: #feca3e;
+    --color-yellow-300: #feca3e;
+    --color-yellow-400: #f9d028;
+    --color-yellow-500: #f9d028;
+    --color-yellow-600: #f9d028;
+    --color-yellow-700: #13294b;
+    --color-yellow-800: #13294b;
+    --color-yellow-900: #001f3f;
+
+    /* Error colors remain the supplied UPAMS error palette. */
+    --color-red-50: #fef2f2;
+    --color-red-100: #fef2f2;
+    --color-red-200: #fecaca;
+    --color-red-300: #fecaca;
+    --color-red-400: #dc2626;
+    --color-red-500: #dc2626;
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-red-800: #b91c1c;
+    --color-red-900: #b91c1c;
+    --color-red-950: #b91c1c;
+    --color-rose-50: #fef2f2;
+    --color-rose-100: #fef2f2;
+    --color-rose-200: #fecaca;
+    --color-rose-600: #dc2626;
+    --color-rose-700: #b91c1c;
+}
+
+@layer base {
+    body {
+        background-color: var(--color-page);
+        color: var(--color-body);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        color: var(--color-heading);
+    }
+
+    ::selection {
+        background-color: var(--color-busitema-gold);
+        color: var(--color-busitema-navy);
+    }
+
+    a[href],
+    button:not(:disabled),
+    input[type='button']:not(:disabled),
+    input[type='submit']:not(:disabled),
+    input[type='reset']:not(:disabled),
+    [role='button']:not([aria-disabled='true']) {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled,
+    [aria-disabled='true'] {
+        cursor: not-allowed;
+    }
+}
+
+@layer utilities {
+    /* Existing primary action buttons use this utility throughout the Blade views. */
+    .bg-emerald-800 {
+        background-color: var(--color-busitema-gold);
+    }
+
+    .bg-emerald-800.text-white {
+        color: var(--color-busitema-navy);
+    }
+
+    .hover\:bg-emerald-900:hover {
+        background-color: var(--color-busitema-yellow);
+    }
+}
+
+#app-sidebar,
+#app-shell {
+    transition-duration: 200ms;
+    transition-property: width, padding-left, transform;
+    transition-timing-function: ease-out;
+}
+
+@media (min-width: 64rem) {
+    html[data-sidebar-collapsed='true'] #app-sidebar {
+        width: 5rem;
+    }
+
+    html[data-sidebar-collapsed='true'] #app-shell {
+        padding-left: 5.5rem;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-sidebar-logo] {
+        justify-content: flex-start;
+        margin-inline: auto;
+        overflow: hidden;
+        padding: 0.35rem;
+        width: 3.25rem;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-sidebar-logo] img {
+        flex: none;
+        height: 2.5rem;
+        max-width: none;
+        width: auto;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-sidebar-section],
+    html[data-sidebar-collapsed='true'] [data-sidebar-label],
+    html[data-sidebar-collapsed='true'] [data-sidebar-user],
+    html[data-sidebar-collapsed='true'] [data-collapse-label] {
+        display: none;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-sidebar-item] {
+        justify-content: center;
+        padding-inline: 0.75rem;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-sidebar-collapse] {
+        justify-content: center;
+        padding-inline: 0;
+    }
+
+    html[data-sidebar-collapsed='true'] [data-collapse-chevron] {
+        transform: rotate(180deg);
+    }
 }

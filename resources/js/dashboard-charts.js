@@ -9,7 +9,7 @@ if (dataElement) {
         maintainAspectRatio: false,
         animation: { duration: 350 },
         plugins: {
-            legend: { labels: { color: '#334155', usePointStyle: true, boxWidth: 10 } },
+            legend: { labels: { color: '#6B6375', usePointStyle: true, boxWidth: 10 } },
         },
     };
 
@@ -21,8 +21,8 @@ if (dataElement) {
                 labels: chartData.task_status.labels,
                 datasets: [{
                     data: chartData.task_status.values,
-                    backgroundColor: ['#64748b', '#059669', '#d97706', '#0f766e', '#7c3aed'],
-                    borderColor: '#ffffff',
+                    backgroundColor: ['#6B6375', '#1E73BE', '#F9D028', '#13294B', '#001F3F'],
+                    borderColor: '#FFFFFF',
                     borderWidth: 3,
                 }],
             },
@@ -36,15 +36,15 @@ if (dataElement) {
             type: 'bar',
             data: {
                 labels: chartData.hours_by_project.labels,
-                datasets: [{ label: 'Hours', data: chartData.hours_by_project.values, backgroundColor: '#047857', borderRadius: 6 }],
+                datasets: [{ label: 'Hours', data: chartData.hours_by_project.values, backgroundColor: '#1E73BE', borderRadius: 6 }],
             },
             options: {
                 ...baseOptions,
                 indexAxis: 'y',
                 plugins: { ...baseOptions.plugins, legend: { display: false } },
                 scales: {
-                    x: { beginAtZero: true, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } },
-                    y: { ticks: { color: '#334155' }, grid: { display: false } },
+                    x: { beginAtZero: true, ticks: { color: '#6B6375' }, grid: { color: '#E5E4E7' } },
+                    y: { ticks: { color: '#13294B' }, grid: { display: false } },
                 },
             },
         });
@@ -59,11 +59,11 @@ if (dataElement) {
                 datasets: [{
                     label: 'Hours',
                     data: chartData.weekly_hours.values,
-                    borderColor: '#0f766e',
-                    backgroundColor: 'rgba(16, 185, 129, 0.14)',
+                    borderColor: '#1E73BE',
+                    backgroundColor: 'rgba(30, 115, 190, 0.14)',
                     fill: true,
                     tension: 0.3,
-                    pointBackgroundColor: '#0f172a',
+                    pointBackgroundColor: '#001F3F',
                     pointRadius: 4,
                 }],
             },
@@ -71,8 +71,8 @@ if (dataElement) {
                 ...baseOptions,
                 plugins: { ...baseOptions.plugins, legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } },
-                    x: { ticks: { color: '#334155' }, grid: { display: false } },
+                    y: { beginAtZero: true, ticks: { color: '#6B6375' }, grid: { color: '#E5E4E7' } },
+                    x: { ticks: { color: '#13294B' }, grid: { display: false } },
                 },
             },
         });

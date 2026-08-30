@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') | Centralized Library Staff Performance System</title>
+    <script>
+        try {
+            if (localStorage.getItem('library-performance-sidebar-collapsed') === 'true') {
+                document.documentElement.dataset.sidebarCollapsed = 'true';
+            }
+        } catch (_) {}
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen overflow-x-hidden bg-slate-100 text-slate-900 antialiased">
@@ -12,7 +19,7 @@
 
     @include('layouts.partials.sidebar')
 
-    <div class="min-h-screen lg:pl-72">
+    <div id="app-shell" class="min-h-screen lg:pl-72">
         @include('layouts.partials.header')
 
         <main id="main-content" class="px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

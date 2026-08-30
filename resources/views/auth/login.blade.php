@@ -14,23 +14,15 @@
     <div class="min-h-screen flex">
 
         {{-- Branding panel --}}
-        <div class="hidden lg:flex lg:w-1/2 bg-emerald-900 text-white p-16 flex-col justify-between">
+        <div class="hidden lg:flex lg:w-1/2 bg-busitema-blue text-white p-16 flex-col justify-between">
 
             <div>
-                <div class="flex items-center gap-3">
-                    <div class="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center font-bold text-xl">
-                        BU
-                    </div>
-
-                    <div>
-                        <p class="text-lg font-semibold">
-                            Busitema University
-                        </p>
-
-                        <p class="text-sm text-emerald-100">
-                            University Library
-                        </p>
-                    </div>
+                <div class="inline-flex rounded-2xl bg-white p-3 shadow-lg">
+                    <img
+                        src="{{ asset('images/branding/busitema-university-logo.png') }}"
+                        alt="Busitema University"
+                        class="h-auto w-64 object-contain"
+                    >
                 </div>
             </div>
 
@@ -39,7 +31,7 @@
                     STAFF PERFORMANCE MANAGEMENT
                 </p>
 
-                <h1 class="text-4xl xl:text-5xl font-bold leading-tight">
+                <h1 class="text-4xl xl:text-5xl font-bold leading-tight text-white">
                     Centralized Library Staff Performance System
                 </h1>
 
@@ -63,13 +55,13 @@
 
                 {{-- Mobile branding --}}
                 <div class="lg:hidden mb-10 text-center">
-                    <div class="mx-auto h-14 w-14 rounded-xl bg-emerald-900 text-white flex items-center justify-center font-bold text-xl">
-                        BU
+                    <div class="mx-auto inline-flex max-w-full rounded-2xl bg-white p-3 shadow-sm">
+                        <img
+                            src="{{ asset('images/branding/busitema-university-logo.png') }}"
+                            alt="Busitema University"
+                            class="h-auto w-64 max-w-full object-contain"
+                        >
                     </div>
-
-                    <h1 class="mt-4 text-xl font-bold text-slate-900">
-                        Busitema University Library
-                    </h1>
                 </div>
 
                 <div class="mb-8">

@@ -8,6 +8,7 @@ use App\Models\Task;
 use App\Models\WorkEntry;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreWorkEntryRequest extends FormRequest
 {
@@ -43,6 +44,9 @@ class StoreWorkEntryRequest extends FormRequest
             'task_id' => ['required', 'integer', 'exists:tasks,id'],
             'subtask_id' => ['nullable', 'integer', 'exists:subtasks,id'],
             'work_date' => ['required', 'date', 'before_or_equal:today'],
+            'due_date' => ['nullable', 'date', 'after_or_equal:work_date'],
+            'priority' => ['nullable', Rule::in(['low', 'medium', 'high', 'critical'])],
+            'activity_status' => ['nullable', Rule::in(['not_started', 'in_progress', 'completed', 'blocked'])],
             'work_location' => ['nullable', 'string', 'max:255'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i', 'after:start_time'],

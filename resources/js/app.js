@@ -5,6 +5,8 @@ import './university-dashboard-charts';
 const sidebar = document.querySelector('#app-sidebar');
 const sidebarOverlay = document.querySelector('#sidebar-overlay');
 const sidebarButton = document.querySelector('[data-sidebar-open]');
+const sidebarCollapseButton = document.querySelector('[data-sidebar-collapse]');
+const sidebarStorageKey = 'library-performance-sidebar-collapsed';
 
 const setSidebarOpen = (open) => {
     if (!sidebar || !sidebarOverlay || !sidebarButton) return;
@@ -18,6 +20,27 @@ const setSidebarOpen = (open) => {
 sidebarButton?.addEventListener('click', () => setSidebarOpen(true));
 document.querySelector('[data-sidebar-close]')?.addEventListener('click', () => setSidebarOpen(false));
 sidebarOverlay?.addEventListener('click', () => setSidebarOpen(false));
+
+const setSidebarCollapsed = (collapsed) => {
+    if (!sidebar || !sidebarCollapseButton) return;
+
+    document.documentElement.dataset.sidebarCollapsed = String(collapsed);
+    sidebarCollapseButton.setAttribute('aria-pressed', String(collapsed));
+    sidebarCollapseButton.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+
+    try {
+        localStorage.setItem(sidebarStorageKey, String(collapsed));
+    } catch (_) {
+        // The sidebar still works when browser storage is unavailable.
+    }
+};
+
+if (sidebarCollapseButton) {
+    setSidebarCollapsed(document.documentElement.dataset.sidebarCollapsed === 'true');
+    sidebarCollapseButton.addEventListener('click', () => {
+        setSidebarCollapsed(document.documentElement.dataset.sidebarCollapsed !== 'true');
+    });
+}
 
 const userMenu = document.querySelector('[data-user-menu]');
 const userMenuButton = document.querySelector('[data-user-menu-button]');

@@ -31,7 +31,8 @@ class TimesheetReportController extends Controller
         [$month, $year] = $this->period($request);
         $data = $timesheets->monthlyFor($request->user(), $month, $year);
         $rows = $data['entries']->map(fn ($entry) => [
-            $entry->entry_code, $entry->work_date->format('Y-m-d'), $entry->project?->project_code,
+            $entry->entry_code, $entry->work_date->format('Y-m-d'), $entry->due_date?->format('Y-m-d'),
+            $entry->priority, $entry->activity_status, $entry->project?->project_code,
             $entry->project?->title, $entry->task?->task_code, $entry->task?->title,
             $entry->subtask?->subtask_code, $entry->subtask?->title, $entry->start_time,
             $entry->end_time, round($entry->duration_minutes / 60, 2), $entry->work_description,
@@ -40,7 +41,7 @@ class TimesheetReportController extends Controller
         ]);
 
         return $files->csv([
-            'Work-entry Code', 'Work Date', 'Project Code', 'Project', 'Task Code', 'Task',
+            'Work-entry Code', 'Work Date', 'Due Date', 'Priority', 'Activity Status', 'Project Code', 'Project', 'Task Code', 'Task',
             'Subtask Code', 'Subtask', 'Start Time', 'End Time', 'Calculated Hours',
             'Work Description', 'Output / Deliverable', 'Challenge Encountered',
             'Corrective Action Taken', 'Support Required', 'Follow-up / Planned Next Activity', 'Remarks', 'Work Location',

@@ -41,7 +41,10 @@ class AuthenticatedLayoutTest extends TestCase
 
         $this->actingAs($user)->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('My Work')
+            ->assertSee('Daily Activities')
+            ->assertSee('Weekly Activities')
+            ->assertSee('Task Tracker')
+            ->assertSee('Printable Timesheet')
             ->assertSee('Projects')
             ->assertSee('Tasks')
             ->assertSee('Reports')

@@ -10,12 +10,15 @@ class WorkEntryPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->account_status === 'active';
+        return $user->account_status === 'active'
+            && $user->hasAnyPermission([
+                'view own timesheet', 'view supervised timesheets', 'view all timesheets', 'create timesheet entries',
+            ]);
     }
 
     public function create(User $user): bool
     {
-        return $user->account_status === 'active';
+        return $user->account_status === 'active' && $user->can('create timesheet entries');
     }
 
     public function view(User $user, WorkEntry $workEntry): bool

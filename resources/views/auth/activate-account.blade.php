@@ -9,7 +9,13 @@
 <body class="min-h-screen bg-slate-100">
 <main class="flex min-h-screen items-center justify-center p-6">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-900 text-xl font-bold text-white">BU</div>
+        <div class="flex justify-center rounded-2xl bg-white p-3 shadow-sm">
+            <img
+                src="{{ asset('images/branding/busitema-university-logo.png') }}"
+                alt="Busitema University"
+                class="h-auto w-64 max-w-full object-contain"
+            >
+        </div>
 
         <div class="mt-7 text-center">
             <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Account Security</p>

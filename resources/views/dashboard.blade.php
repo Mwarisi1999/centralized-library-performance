@@ -14,6 +14,27 @@
         </div>
     </section>
 
+    @if(auth()->user()->hasAnyRole(['Staff', 'Intern']))
+        <section class="mt-6" aria-labelledby="work-modules-heading">
+            <div class="mb-4"><h2 id="work-modules-heading" class="text-xl font-bold">Your work modules</h2><p class="mt-1 text-sm text-slate-600">Record activities, monitor assignments, and prepare your timesheet.</p></div>
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach([
+                    ['Daily Activities', 'Record and review work completed each day.', 'daily-activities.index'],
+                    ['Weekly Activities', 'See activity coverage from Monday through Sunday.', 'weekly-activities.index'],
+                    ['Task Tracker', 'Monitor assigned tasks, deadlines, progress, and hours.', 'task-tracker.index'],
+                    ['Printable Timesheet', 'Prepare monthly work records for printing or export.', 'printable-timesheet.index'],
+                ] as [$label, $description, $route])
+                    <a href="{{ route($route) }}" class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-600 hover:shadow-md">
+                        <span class="block h-2 w-2 rounded-full bg-amber-400"></span>
+                        <h3 class="mt-4 text-lg font-bold group-hover:text-blue-700">{{ $label }}</h3>
+                        <p class="mt-2 text-sm leading-6 text-slate-600">{{ $description }}</p>
+                        <span class="mt-4 inline-block text-sm font-semibold text-blue-700">Open module →</span>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     @php
         $cards = [
             ['label' => 'Hours Worked This Month', 'value' => $summary['hours_this_month'], 'note' => 'Recorded time this calendar month', 'accent' => 'emerald'],

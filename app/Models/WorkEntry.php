@@ -12,6 +12,7 @@ class WorkEntry extends Model
 
     protected $fillable = [
         'entry_code', 'user_id', 'project_id', 'task_id', 'subtask_id', 'work_date', 'work_location',
+        'due_date', 'priority', 'activity_status',
         'start_time', 'end_time', 'duration_minutes', 'work_description',
         'output_deliverable', 'challenge_encountered', 'corrective_action',
         'support_required', 'planned_next_activity', 'remarks',
@@ -19,7 +20,7 @@ class WorkEntry extends Model
 
     protected function casts(): array
     {
-        return ['work_date' => 'date', 'duration_minutes' => 'integer'];
+        return ['work_date' => 'date', 'due_date' => 'date', 'duration_minutes' => 'integer'];
     }
 
     public function user()
