@@ -7,6 +7,12 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Centralized Library Staff Performance System
+
+### Day 21 deployment note
+
+The application provides `php artisan notifications:send-task-reminders --days=3` for deduplicated in-app due-date and overdue alerts. Production scheduling is intentionally not configured here; add this command to the Laravel scheduler/cron during the approved Day 21 deployment work.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

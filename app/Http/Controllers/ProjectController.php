@@ -11,6 +11,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\ProjectCodeService;
 use App\Services\ProjectProgressService;
+use App\Services\WorkflowNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -89,7 +90,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function store(StoreProjectRequest $request, ProjectCodeService $codes)
+    public function store(StoreProjectRequest $request, ProjectCodeService $codes, WorkflowNotificationService $notifications)
     {
         $validated = $request->validated();
 
@@ -131,6 +132,13 @@ class ProjectController extends Controller
                 return $project;
             });
         });
+
+        $project->load('members');
+        foreach ($project->members as $member) {
+            if ($member->id !== $request->user()->id) {
+                $notifications->send($member, 'project_assigned', 'New project assignment', "You were added to {$project->project_code}: {$project->title}.", route('projects.show', $project), "project-assigned:{$project->id}:{$member->id}", 'action');
+            }
+        }
 
         return redirect()
             ->route('projects.show', $project)
@@ -191,9 +199,10 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function update(UpdateProjectRequest $request, Project $project, ProjectProgressService $progress)
+    public function update(UpdateProjectRequest $request, Project $project, ProjectProgressService $progress, WorkflowNotificationService $notifications)
     {
         $validated = $request->validated();
+        $previousMemberIds = $project->projectMembers()->where('is_active', true)->pluck('user_id');
 
         DB::transaction(function () use ($validated, $project, $progress) {
             $lockedProject = Project::query()->lockForUpdate()->findOrFail($project->id);
@@ -249,6 +258,18 @@ class ProjectController extends Controller
 
             $progress->recalculate($lockedProject->refresh());
         });
+
+        $project->refresh();
+        $newMemberIds = $project->projectMembers()->where('is_active', true)->pluck('user_id')->diff($previousMemberIds);
+        User::query()->whereIn('id', $newMemberIds)->get()->each(fn (User $member) => $notifications->send(
+            $member,
+            'project_assigned',
+            'New project assignment',
+            "You were added to {$project->project_code}: {$project->title}.",
+            route('projects.show', $project),
+            "project-assigned:{$project->id}:{$member->id}",
+            'action',
+        ));
 
         return redirect()
             ->route('projects.show', $project)

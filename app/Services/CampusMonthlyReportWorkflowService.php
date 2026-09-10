@@ -11,6 +11,7 @@ class CampusMonthlyReportWorkflowService
     public function __construct(
         private readonly CampusMonthlyReportService $reports,
         private readonly CampusMonthlyReportCodeService $codes,
+        private readonly WorkflowNotificationService $notifications,
     ) {}
 
     public function finalize(User $user, int $month, int $year): CampusMonthlyReport
@@ -48,6 +49,16 @@ class CampusMonthlyReportWorkflowService
                 'event' => 'report_finalized',
                 'description' => "Finalized {$report->report_code} for {$snapshot['identity']['period']}.",
             ]);
+
+            User::role('University Librarian')->where('account_status', 'active')->each(fn (User $recipient) => $this->notifications->send(
+                $recipient,
+                'campus_report_finalized',
+                'Campus report finalized',
+                "{$campus->name} finalized {$report->report_code}.",
+                route('campus-reports.show', $report),
+                "campus-report-finalized:{$report->id}:{$recipient->id}",
+                'success',
+            ));
 
             return $report;
         }));

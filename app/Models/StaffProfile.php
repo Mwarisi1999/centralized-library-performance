@@ -23,7 +23,6 @@ class StaffProfile extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'emergency_contact_relationship',
-        'profile_photo_path',
         'employment_type',
         'start_date',
         'status',

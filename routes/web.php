@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdministrationController;
+use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Auth\AccountActivationController;
 use App\Http\Controllers\CampusDashboardController;
@@ -9,9 +11,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IndividualMonthlyReportController;
 use App\Http\Controllers\IndividualMonthlyReportExportController;
 use App\Http\Controllers\MonthlyReportReviewController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PrintableTimesheetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\StaffPerformanceController;
 use App\Http\Controllers\SubtaskController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskTrackerController;
@@ -40,6 +44,17 @@ Route::middleware(['guest', 'throttle:6,1'])->group(function () {
 
 Route::middleware(['auth', 'active'])->group(function () {
 
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'show'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/picture', [ProfileController::class, 'updatePicture'])->name('profile.picture.update');
+    Route::delete('/profile/picture', [ProfileController::class, 'destroyPicture'])->name('profile.picture.destroy');
+    Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::get('/performance/staff/{staff}', [StaffPerformanceController::class, 'show'])->name('performance.staff.show');
+
     Route::get('/university-dashboard', [UniversityDashboardController::class, 'index'])->name('university-dashboard.index');
     Route::get('/university-dashboard/export.csv', [UniversityDashboardController::class, 'csv'])->name('university-dashboard.csv');
     Route::get('/university-dashboard/campuses/{campus}', [UniversityDashboardController::class, 'campus'])->name('university-dashboard.campus');
@@ -66,10 +81,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/weekly-activities', WeeklyActivityController::class)->name('weekly-activities.index');
         Route::get('/task-tracker', TaskTrackerController::class)->name('task-tracker.index');
         Route::get('/printable-timesheet', PrintableTimesheetController::class)->name('printable-timesheet.index');
-        Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
-        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-        Route::patch('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
-        Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
     });
     Route::get('/my-work/timesheet', [WorkEntryController::class, 'timesheet'])->name('my-work.timesheet');
     Route::get('/my-work/timesheet/print', [TimesheetReportController::class, 'print'])->name('my-work.timesheet.print');
@@ -166,5 +177,15 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/admin/staff/{user}', [StaffController::class, 'show'])
         ->middleware(['verified', 'permission:view staff'])
         ->name('admin.staff.show');
+
+    Route::prefix('admin')->name('admin.')->middleware(['verified', 'role:Administrator'])->group(function () {
+        Route::get('/organization/{entity?}', [OrganizationController::class, 'index'])->name('organization.index');
+        Route::get('/organization/{entity}/create', [OrganizationController::class, 'create'])->name('organization.create');
+        Route::post('/organization/{entity}', [OrganizationController::class, 'store'])->name('organization.store');
+        Route::get('/organization/{entity}/{record}/edit', [OrganizationController::class, 'edit'])->name('organization.edit');
+        Route::match(['put', 'patch'], '/organization/{entity}/{record}', [OrganizationController::class, 'update'])->name('organization.update');
+        Route::patch('/organization/{entity}/{record}/toggle', [OrganizationController::class, 'toggle'])->name('organization.toggle');
+        Route::get('/administration', [AdministrationController::class, 'index'])->name('administration.index');
+    });
 
 });

@@ -21,7 +21,7 @@ class UpdateOwnProfileRequest extends FormRequest
 
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['Staff', 'Intern']) ?? false;
+        return $this->user() !== null;
     }
 
     public function rules(): array
@@ -36,7 +36,6 @@ class UpdateOwnProfileRequest extends FormRequest
             'emergency_contact_name' => ['nullable', 'string', 'max:255'],
             'emergency_contact_phone' => ['nullable', 'string', 'max:30'],
             'emergency_contact_relationship' => ['nullable', 'string', 'max:100'],
-            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ];
     }
 }

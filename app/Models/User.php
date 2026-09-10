@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -31,6 +32,7 @@ class User extends Authenticatable
         'account_status',
         'activated_at',
         'last_login_at',
+        'profile_picture',
     ];
 
     protected function casts(): array
@@ -46,6 +48,40 @@ class User extends Authenticatable
     public function staffProfile()
     {
         return $this->hasOne(StaffProfile::class);
+    }
+
+    public function managedProfilePicturePath(): ?string
+    {
+        $path = $this->profile_picture;
+
+        if (! is_string($path)
+            || $path === ''
+            || $path !== 'profile-pictures/'.basename($path)) {
+            return null;
+        }
+
+        return $path;
+    }
+
+    public function profilePictureUrl(): ?string
+    {
+        $path = $this->managedProfilePicturePath();
+
+        if (! $path || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $url = Storage::disk('public')->url($path);
+
+        if (config('filesystems.disks.public.driver') !== 'local') {
+            return $url;
+        }
+
+        $publicPath = parse_url($url, PHP_URL_PATH);
+
+        return is_string($publicPath) && $publicPath !== ''
+            ? '/'.ltrim($publicPath, '/')
+            : null;
     }
 
     public function supervisees()

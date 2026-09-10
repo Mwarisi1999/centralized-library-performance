@@ -33,12 +33,14 @@ class ProfileModuleTest extends TestCase
         }
     }
 
-    public function test_other_roles_cannot_open_the_operational_profile_module(): void
+    public function test_other_authenticated_roles_can_open_their_profile(): void
     {
         $user = User::factory()->create(['account_status' => 'active']);
         $user->assignRole('M&E Officer');
 
-        $this->actingAs($user)->get(route('profile.show'))->assertForbidden();
+        $this->actingAs($user)->get(route('profile.show'))
+            ->assertOk()
+            ->assertSee('My Profile');
     }
 
     public function test_user_can_update_personal_details_without_changing_employment_assignment(): void
@@ -68,20 +70,23 @@ class ProfileModuleTest extends TestCase
         ]);
     }
 
-    public function test_profile_photo_is_private_and_available_to_its_owner(): void
+    public function test_profile_picture_uses_the_public_disk_and_renders_for_its_owner(): void
     {
-        Storage::fake('local');
+        Storage::fake('public');
         $user = $this->profileUser('Intern');
 
-        $this->actingAs($user)->patch(route('profile.update'), [
-            'name' => $user->name,
-            'email' => $user->email,
-            'profile_photo' => UploadedFile::fake()->image('portrait.jpg'),
+        $this->actingAs($user)->patch(route('profile.picture.update'), [
+            'profile_picture' => UploadedFile::fake()->createWithContent(
+                'portrait.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true),
+            ),
         ])->assertRedirect(route('profile.show'));
 
-        $path = $user->fresh()->staffProfile->profile_photo_path;
-        Storage::disk('local')->assertExists($path);
-        $this->actingAs($user)->get(route('profile.photo'))->assertOk();
+        $path = $user->fresh()->profile_picture;
+        Storage::disk('public')->assertExists($path);
+        $this->actingAs($user)->get(route('profile.show'))
+            ->assertOk()
+            ->assertSee('/storage/'.$path, false);
     }
 
     public function test_user_can_change_password_with_current_password(): void

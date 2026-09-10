@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\TaskCodeService;
 use App\Services\TaskReviewerResolver;
+use App\Services\WorkflowNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -110,7 +111,7 @@ class TaskController extends Controller
         ]);
     }
 
-    public function store(StoreTaskRequest $request, TaskCodeService $codes)
+    public function store(StoreTaskRequest $request, TaskCodeService $codes, WorkflowNotificationService $notifications)
     {
         $validated = $request->validated();
 
@@ -141,6 +142,13 @@ class TaskController extends Controller
                 return $task;
             });
         });
+
+        $task->load('assignees');
+        foreach ($task->assignees as $assignee) {
+            if ($assignee->id !== $request->user()->id) {
+                $notifications->send($assignee, 'task_assigned', 'New task assignment', "You were assigned {$task->task_code}: {$task->title}.", route('tasks.show', $task), "task-assigned:{$task->id}:{$assignee->id}", 'action');
+            }
+        }
 
         return redirect()->route('tasks.show', $task)->with('success', 'Task created successfully.');
     }
@@ -197,7 +205,7 @@ class TaskController extends Controller
         return back()->with('success', 'Task progress updated.');
     }
 
-    public function submitReview(Request $request, Task $task, TaskReviewerResolver $reviewers)
+    public function submitReview(Request $request, Task $task, TaskReviewerResolver $reviewers, WorkflowNotificationService $notifications)
     {
         Gate::authorize('execute', $task);
         if ($task->status !== 'in_progress' || (float) $task->progress_percentage !== 100.0) {
@@ -216,11 +224,12 @@ class TaskController extends Controller
             $task->reviews()->create(['submitted_by' => $request->user()->id, 'reviewer_id' => $reviewer->id, 'submitted_at' => $submittedAt, 'status' => 'pending']);
             $task->activities()->create(['user_id' => $request->user()->id, 'activity_type' => 'submitted_for_review', 'message' => "Submitted to {$reviewer->name} for review.", 'old_status' => 'in_progress', 'new_status' => 'pending_review', 'old_progress' => $task->progress_percentage, 'new_progress' => $task->progress_percentage]);
         });
+        $notifications->send($reviewer, 'task_submitted', 'Task awaiting review', "{$task->task_code} was submitted by {$request->user()->name}.", route('tasks.show', $task), "task-submitted:{$task->id}:{$task->submitted_at?->timestamp}", 'action');
 
         return back()->with('success', "Task submitted to {$reviewer->name} for review.");
     }
 
-    public function approve(ApproveTaskRequest $request, Task $task)
+    public function approve(ApproveTaskRequest $request, Task $task, WorkflowNotificationService $notifications)
     {
         DB::transaction(function () use ($request, $task) {
             $task = Task::query()->lockForUpdate()->findOrFail($task->id);
@@ -231,11 +240,15 @@ class TaskController extends Controller
             $task->update(['status' => 'completed', 'progress_percentage' => 100, 'completed_at' => $reviewedAt, 'reviewed_by' => $request->user()->id, 'reviewed_at' => $reviewedAt, 'returned_at' => null]);
             $task->activities()->create(['user_id' => $request->user()->id, 'activity_type' => 'task_approved', 'message' => $request->validated('remark'), 'old_status' => 'pending_review', 'new_status' => 'completed', 'old_progress' => 100, 'new_progress' => 100]);
         });
+        $task->load('assignees');
+        foreach ($task->assignees as $assignee) {
+            $notifications->send($assignee, 'task_approved', 'Task approved', "{$task->task_code} was approved.", route('tasks.show', $task), "task-approved:{$task->id}:{$task->reviewed_at?->timestamp}", 'success');
+        }
 
         return back()->with('success', 'Task approved successfully.');
     }
 
-    public function returnForCorrection(ReturnTaskRequest $request, Task $task)
+    public function returnForCorrection(ReturnTaskRequest $request, Task $task, WorkflowNotificationService $notifications)
     {
         DB::transaction(function () use ($request, $task) {
             $task = Task::query()->lockForUpdate()->findOrFail($task->id);
@@ -247,6 +260,10 @@ class TaskController extends Controller
             $task->update(['status' => 'in_progress', 'reviewed_by' => $request->user()->id, 'reviewed_at' => $reviewedAt, 'returned_at' => $reviewedAt, 'completed_at' => null]);
             $task->activities()->create(['user_id' => $request->user()->id, 'activity_type' => 'task_returned', 'message' => $reason, 'old_status' => 'pending_review', 'new_status' => 'in_progress', 'old_progress' => $task->progress_percentage, 'new_progress' => $task->progress_percentage]);
         });
+        $task->load('assignees');
+        foreach ($task->assignees as $assignee) {
+            $notifications->send($assignee, 'task_returned', 'Task returned for correction', "{$task->task_code} was returned: {$request->validated('remark')}", route('tasks.show', $task), "task-returned:{$task->id}:{$task->reviewed_at?->timestamp}", 'warning');
+        }
 
         return back()->with('success', 'Task returned for correction.');
     }

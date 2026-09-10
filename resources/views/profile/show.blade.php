@@ -6,9 +6,6 @@
 
 @section('content')
 @php
-    $nameParts = collect(preg_split('/\s+/', trim($user->name)))->filter()->values();
-    $initials = str($nameParts->first() ?? '?')->substr(0, 1)
-        .($nameParts->count() > 1 ? str($nameParts->last())->substr(0, 1) : '');
     $fieldClass = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-busitema-blue focus:ring-2 focus:ring-busitema-blue/20';
     $readOnlyClass = 'mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600';
 @endphp
@@ -21,19 +18,35 @@
 <div class="grid gap-6 xl:grid-cols-[20rem_minmax(0,1fr)]">
     <aside class="space-y-6">
         <section class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-            <div class="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-busitema-blue/10 text-3xl font-bold uppercase text-busitema-blue ring-4 ring-white shadow">
-                @if($profile?->profile_photo_path)
-                    <img src="{{ route('profile.photo') }}?v={{ $profile->updated_at?->timestamp }}" alt="{{ $user->name }} profile photo" class="h-full w-full object-cover">
-                @else
-                    {{ $initials }}
-                @endif
-            </div>
+            <x-user-avatar :user="$user" size="xl" :preview="true" class="mx-auto ring-4 ring-white shadow" />
             <h3 class="mt-4 text-xl font-bold text-slate-950">{{ $user->name }}</h3>
             <p class="mt-1 text-sm text-slate-600">{{ $profile?->position?->name ?? $user->getRoleNames()->join(', ') }}</p>
             <p class="mt-1 text-sm text-slate-500">{{ $profile?->library?->name ?? $profile?->campus?->name ?? 'Library assignment pending' }}</p>
             <span class="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $profile?->status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600' }}">
                 {{ str($profile?->status ?? $user->account_status ?? 'active')->replace('_', ' ')->title() }}
             </span>
+
+            <form method="POST" action="{{ route('profile.picture.update') }}" enctype="multipart/form-data" class="mt-5 border-t border-slate-100 pt-5 text-left">
+                @csrf
+                @method('PATCH')
+                <label class="block">
+                    <span class="text-sm font-semibold text-slate-700">Profile picture</span>
+                    <input type="file" name="profile_picture" accept="image/jpeg,image/png,image/webp" data-profile-picture-input class="{{ $fieldClass }} file:mr-4 file:rounded-lg file:border-0 file:bg-busitema-blue/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-busitema-blue">
+                    <span class="mt-1 block text-xs text-slate-500">JPG, PNG, or WebP, up to 2 MB.</span>
+                    @error('profile_picture')<span class="mt-1 block text-sm text-red-600">{{ $message }}</span>@enderror
+                </label>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <button type="submit" class="rounded-xl bg-busitema-blue px-4 py-2 text-sm font-bold text-white">{{ $user->profile_picture ? 'Replace picture' : 'Upload picture' }}</button>
+                </div>
+            </form>
+
+            @if($user->profile_picture)
+                <form method="POST" action="{{ route('profile.picture.destroy') }}" class="mt-2 text-left" onsubmit="return confirm('Remove your current profile picture?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="rounded-xl px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50">Remove picture</button>
+                </form>
+            @endif
 
             <dl class="mt-6 space-y-3 border-t border-slate-100 pt-5 text-left text-sm">
                 <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-400">Email</dt><dd class="mt-1 break-words text-slate-700">{{ $user->email }}</dd></div>
@@ -52,13 +65,12 @@
     </aside>
 
     <div class="space-y-6">
-        <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <form method="POST" action="{{ route('profile.update') }}" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             @csrf
             @method('PATCH')
 
             <div class="border-b border-slate-200 px-5 py-4 sm:px-6"><h3 class="text-lg font-bold text-slate-950">Personal information</h3><p class="mt-1 text-sm text-slate-500">These details appear on your staff profile.</p></div>
             <div class="grid gap-5 p-5 sm:grid-cols-2 sm:p-6">
-                <label class="block sm:col-span-2"><span class="text-sm font-semibold text-slate-700">Profile photo</span><input type="file" name="profile_photo" accept="image/jpeg,image/png,image/webp" class="{{ $fieldClass }} file:mr-4 file:rounded-lg file:border-0 file:bg-busitema-blue/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-busitema-blue"><span class="mt-1 block text-xs text-slate-500">JPG, PNG, or WebP, up to 2 MB.</span>@error('profile_photo')<span class="mt-1 block text-sm text-red-600">{{ $message }}</span>@enderror</label>
                 <label class="block sm:col-span-2"><span class="text-sm font-semibold text-slate-700">Full name</span><input name="name" value="{{ old('name', $user->name) }}" required class="{{ $fieldClass }}">@error('name')<span class="mt-1 block text-sm text-red-600">{{ $message }}</span>@enderror</label>
                 <label class="block"><span class="text-sm font-semibold text-slate-700">Email address</span><input type="email" name="email" value="{{ old('email', $user->email) }}" required class="{{ $fieldClass }}">@error('email')<span class="mt-1 block text-sm text-red-600">{{ $message }}</span>@enderror</label>
                 <label class="block"><span class="text-sm font-semibold text-slate-700">Phone number</span><input name="phone" value="{{ old('phone', $profile?->phone) }}" class="{{ $fieldClass }}">@error('phone')<span class="mt-1 block text-sm text-red-600">{{ $message }}</span>@enderror</label>

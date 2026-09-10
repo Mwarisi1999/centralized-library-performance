@@ -12,6 +12,7 @@ class MonthlyReportWorkflowService
     public function __construct(
         private readonly IndividualMonthlyReportService $reports,
         private readonly MonthlyReportCodeService $codes,
+        private readonly WorkflowNotificationService $notifications,
     ) {}
 
     public function submit(User $user, int $month, int $year): MonthlyReport
@@ -63,6 +64,7 @@ class MonthlyReportWorkflowService
                 'event' => 'report_submitted',
                 'description' => "Submitted {$report->report_code} to {$supervisor->name} for review.",
             ]);
+            $this->notifications->send($supervisor, 'monthly_report_submitted', 'Monthly report awaiting review', "{$user->name} submitted {$report->report_code} for your review.", route('monthly-reports.reviews.show', $report), "report-submitted:{$report->id}:{$submittedAt->timestamp}", 'action');
 
             return $report->refresh();
         }));
@@ -104,6 +106,7 @@ class MonthlyReportWorkflowService
             'event' => $resubmission ? 'report_resubmitted' : 'report_submitted',
             'description' => ($resubmission ? 'Resubmitted' : 'Submitted')." {$report->report_code} to {$supervisor->name} for review.",
         ]);
+        $this->notifications->send($supervisor, 'monthly_report_submitted', 'Monthly report awaiting review', "{$user->name} submitted {$report->report_code} for your review.", route('monthly-reports.reviews.show', $report), "report-submitted:{$report->id}:{$submittedAt->timestamp}", 'action');
 
         return $report->refresh();
     }

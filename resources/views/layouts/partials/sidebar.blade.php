@@ -13,7 +13,7 @@
     ]);
     $canReviewReports = $hasAnyPermission(['view supervised reports', 'review reports', 'approve reports', 'return reports']);
     $canSeeEvidence = $hasAnyPermission(['upload evidence', 'view supervised evidence', 'view all evidence']);
-    $canSeeOrganization = $hasAnyPermission(['manage campuses', 'manage libraries', 'manage positions']);
+    $canSeeOrganization = $hasAnyPermission(['manage campuses', 'manage libraries', 'manage positions', 'manage project categories']);
     $isStaffOrIntern = $user->hasAnyRole(['Staff', 'Intern']);
 @endphp
 
@@ -53,6 +53,8 @@
         @elseif($canSeeMyWork)
             @include('layouts.partials.sidebar-item', ['label' => 'My Work', 'route' => 'my-work.index', 'active' => (request()->routeIs('my-work.*') && ! request()->routeIs('my-work.monthly-report*')) || request()->routeIs('work-entries.*')])
         @endif
+        @include('layouts.partials.sidebar-item', ['label' => 'Notifications', 'route' => 'notifications.index', 'active' => request()->routeIs('notifications.*')])
+        @include('layouts.partials.sidebar-item', ['label' => 'My Profile', 'route' => 'profile.edit', 'active' => request()->routeIs('profile.*')])
         @if($permissions->contains('view projects'))
             @include('layouts.partials.sidebar-item', ['label' => 'Projects', 'route' => 'projects.index', 'active' => request()->routeIs('projects.*')])
         @endif
@@ -71,7 +73,6 @@
         @endif
         @if($isStaffOrIntern)
             @include('layouts.partials.sidebar-item', ['label' => 'Printable Timesheet', 'route' => 'printable-timesheet.index', 'active' => request()->routeIs('printable-timesheet.*') || request()->routeIs('my-work.timesheet.print')])
-            @include('layouts.partials.sidebar-item', ['label' => 'Profile', 'route' => 'profile.show', 'active' => request()->routeIs('profile.*')])
         @endif
         @if($canReviewReports)
             @include('layouts.partials.sidebar-item', ['label' => 'Reports Awaiting My Review', 'route' => 'monthly-reports.reviews.index', 'active' => request()->routeIs('monthly-reports.*')])
@@ -83,10 +84,10 @@
             </div>
         @endif
         @if($canSeeOrganization)
-            @include('layouts.partials.sidebar-item', ['label' => 'Organization Setup'])
+            @include('layouts.partials.sidebar-item', ['label' => 'Organization Setup', 'route' => 'admin.organization.index', 'active' => request()->routeIs('admin.organization.*')])
         @endif
-        @if($permissions->contains('manage roles and permissions'))
-            @include('layouts.partials.sidebar-item', ['label' => 'Administration'])
+        @if($permissions->contains('view administration'))
+            @include('layouts.partials.sidebar-item', ['label' => 'Administration', 'route' => 'admin.administration.index', 'active' => request()->routeIs('admin.administration.*')])
         @endif
     </nav>
 

@@ -67,7 +67,9 @@ class RolePermissionSeeder extends Seeder
             'manage campuses',
             'manage libraries',
             'manage positions',
+            'manage project categories',
             'manage roles and permissions',
+            'view administration',
         ];
 
         foreach ($permissions as $permission) {

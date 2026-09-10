@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MonthlyReportActivity extends Model
 {
-    public const EVENTS = ['report_submitted', 'report_returned', 'report_resubmitted', 'report_approved'];
+    public const EVENTS = ['report_submitted', 'report_returned', 'report_resubmitted', 'report_approved', 'report_override_returned', 'report_override_approved'];
 
     protected $fillable = ['monthly_report_id', 'user_id', 'event', 'description', 'metadata'];
 
@@ -32,6 +32,8 @@ class MonthlyReportActivity extends Model
             'report_returned' => 'Returned Report for Correction',
             'report_resubmitted' => 'Resubmitted Report',
             'report_approved' => 'Approved Report',
+            'report_override_returned' => 'Returned by University Librarian Override',
+            'report_override_approved' => 'Approved by University Librarian Override',
             default => str($this->event)->replace('_', ' ')->title()->toString(),
         };
     }
