@@ -30,7 +30,7 @@ class AuthenticatedLayoutTest extends TestCase
             ->assertSee('Organization Setup')
             ->assertSee('Administration')
             ->assertSee('Projects')
-            ->assertSee('Tasks')
+            ->assertSee('Task Tracker')
             ->assertSee('Reports')
             ->assertSee('Evidence');
     }
@@ -46,7 +46,6 @@ class AuthenticatedLayoutTest extends TestCase
             ->assertSee('Task Tracker')
             ->assertSee('Printable Timesheet')
             ->assertSee('Projects')
-            ->assertSee('Tasks')
             ->assertSee('Reports')
             ->assertSee('Evidence')
             ->assertDontSee('Staff Management')
@@ -62,7 +61,10 @@ class AuthenticatedLayoutTest extends TestCase
             ->assertOk()
             ->assertSee('Staff Management')
             ->assertSee('Projects')
-            ->assertSee('Tasks')
+            ->assertSee('Daily Activities')
+            ->assertSee('Weekly Activities')
+            ->assertSee('Task Tracker')
+            ->assertSee('Printable Timesheet')
             ->assertSee('Reports')
             ->assertSee('Evidence')
             ->assertDontSee('Organization Setup')

@@ -22,9 +22,9 @@ class StaffInternModulesTest extends TestCase
         $this->seed([RolePermissionSeeder::class, ProjectCategorySeeder::class]);
     }
 
-    public function test_staff_and_intern_can_open_all_four_operational_modules(): void
+    public function test_all_operational_roles_can_open_all_four_personal_work_modules(): void
     {
-        foreach (['Staff', 'Intern'] as $role) {
+        foreach (['Staff', 'Intern', 'M&E Officer', 'Campus Librarian', 'University Librarian', 'Administrator'] as $role) {
             $user = $this->user($role);
 
             foreach (['daily-activities.index', 'weekly-activities.index', 'task-tracker.index', 'printable-timesheet.index'] as $route) {
@@ -33,13 +33,47 @@ class StaffInternModulesTest extends TestCase
         }
     }
 
-    public function test_non_operational_role_cannot_open_staff_and_intern_modules(): void
+    public function test_active_user_without_required_capabilities_cannot_open_personal_work_modules(): void
     {
-        $viewer = $this->user('M&E Officer');
+        $user = User::factory()->create(['account_status' => 'active']);
 
         foreach (['daily-activities.index', 'weekly-activities.index', 'task-tracker.index', 'printable-timesheet.index'] as $route) {
-            $this->actingAs($viewer)->get(route($route))->assertForbidden();
+            $this->actingAs($user)->get(route($route))->assertForbidden();
         }
+    }
+
+    public function test_personal_work_modules_remain_scoped_to_the_authenticated_user(): void
+    {
+        $viewer = $this->user('M&E Officer');
+        $other = $this->user('Staff');
+        [$viewerProject, $viewerTask] = $this->assignment($viewer, 'VIEWER');
+        [$otherProject, $otherTask] = $this->assignment($other, 'OTHER');
+        WorkEntry::create([
+            'entry_code' => 'WEN-VIEWER-0001', 'user_id' => $viewer->id,
+            'project_id' => $viewerProject->id, 'task_id' => $viewerTask->id,
+            'work_date' => '2026-08-12', 'priority' => 'medium', 'activity_status' => 'completed',
+            'start_time' => '09:00', 'end_time' => '10:00', 'duration_minutes' => 60,
+            'work_description' => 'Viewer personal activity.',
+        ]);
+        WorkEntry::create([
+            'entry_code' => 'WEN-OTHER-0001', 'user_id' => $other->id,
+            'project_id' => $otherProject->id, 'task_id' => $otherTask->id,
+            'work_date' => '2026-08-12', 'priority' => 'medium', 'activity_status' => 'completed',
+            'start_time' => '10:00', 'end_time' => '11:00', 'duration_minutes' => 60,
+            'work_description' => 'Other user private activity.',
+        ]);
+
+        foreach (['daily-activities.index', 'weekly-activities.index', 'printable-timesheet.index'] as $route) {
+            $this->actingAs($viewer)->get(route($route, ['month' => 8, 'year' => 2026, 'week' => 3]))
+                ->assertOk()
+                ->assertSee('Viewer personal activity.')
+                ->assertDontSee('Other user private activity.');
+        }
+
+        $this->actingAs($viewer)->get(route('task-tracker.index'))
+            ->assertOk()
+            ->assertSee($viewerTask->task_code)
+            ->assertDontSee($otherTask->task_code);
     }
 
     public function test_one_activity_feeds_daily_weekly_tracker_and_printable_timesheet(): void
@@ -83,10 +117,10 @@ class StaffInternModulesTest extends TestCase
         return $user;
     }
 
-    private function assignment(User $user): array
+    private function assignment(User $user, string $suffix = 'MODULE'): array
     {
         $project = Project::create([
-            'project_code' => 'PRJ-MODULE-0001', 'title' => 'Module Project',
+            'project_code' => "PRJ-{$suffix}-0001", 'title' => "{$suffix} Project",
             'project_category_id' => ProjectCategory::firstOrFail()->id,
             'owner_id' => $user->id, 'created_by' => $user->id,
             'start_date' => '2026-08-01', 'due_date' => '2026-08-31',
@@ -96,8 +130,8 @@ class StaffInternModulesTest extends TestCase
         ]);
         $project->members()->attach($user, ['joined_at' => now(), 'is_active' => true]);
         $task = Task::create([
-            'task_code' => 'TSK-MODULE-0001', 'project_id' => $project->id,
-            'title' => 'Module Task', 'created_by' => $user->id, 'assigned_by' => $user->id,
+            'task_code' => "TSK-{$suffix}-0001", 'project_id' => $project->id,
+            'title' => "{$suffix} Task", 'created_by' => $user->id, 'assigned_by' => $user->id,
             'start_date' => '2026-08-01', 'due_date' => '2026-08-20',
             'priority' => 'high', 'status' => 'in_progress',
             'progress_percentage' => 50, 'is_active' => true,

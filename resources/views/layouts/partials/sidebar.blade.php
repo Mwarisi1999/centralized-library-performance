@@ -2,11 +2,10 @@
     $user = auth()->user();
     $permissions = $user->getAllPermissions()->pluck('name');
     $hasAnyPermission = fn (array $names) => $permissions->intersect($names)->isNotEmpty();
-    $canSeeMyWork = $hasAnyPermission([
-        'view own tasks', 'view supervised tasks', 'create timesheet entries',
-        'view own timesheet', 'view supervised timesheets', 'view all timesheets',
+    $canSeePersonalActivities = $hasAnyPermission([
+        'create timesheet entries', 'view own timesheet', 'view supervised timesheets', 'view all timesheets',
     ]);
-    $canSeeTasks = $hasAnyPermission(['view tasks', 'view own tasks', 'view supervised tasks']);
+    $canSeeTasks = $permissions->contains('view tasks');
     $canSeeReports = $hasAnyPermission([
         'view own reports', 'view supervised reports', 'view all reports', 'submit reports',
         'review reports', 'approve reports', 'return reports', 'reopen reports',
@@ -14,7 +13,6 @@
     $canReviewReports = $hasAnyPermission(['view supervised reports', 'review reports', 'approve reports', 'return reports']);
     $canSeeEvidence = $hasAnyPermission(['upload evidence', 'view supervised evidence', 'view all evidence']);
     $canSeeOrganization = $hasAnyPermission(['manage campuses', 'manage libraries', 'manage positions', 'manage project categories']);
-    $isStaffOrIntern = $user->hasAnyRole(['Staff', 'Intern']);
 @endphp
 
 <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col overflow-hidden bg-busitema-blue text-white shadow-2xl transition-transform duration-200 ease-out lg:inset-y-2 lg:left-1 lg:translate-x-0 lg:rounded-2xl" aria-label="Main navigation">
@@ -47,34 +45,30 @@
         @endif
 
         <p data-sidebar-section class="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Work Management</p>
-        @if($isStaffOrIntern)
+        @if($canSeePersonalActivities)
             @include('layouts.partials.sidebar-item', ['label' => 'Daily Activities', 'route' => 'daily-activities.index', 'active' => request()->routeIs('daily-activities.*') || request()->routeIs('my-work.index') || request()->routeIs('work-entries.*')])
             @include('layouts.partials.sidebar-item', ['label' => 'Weekly Activities', 'route' => 'weekly-activities.index', 'active' => request()->routeIs('weekly-activities.*')])
-        @elseif($canSeeMyWork)
-            @include('layouts.partials.sidebar-item', ['label' => 'My Work', 'route' => 'my-work.index', 'active' => (request()->routeIs('my-work.*') && ! request()->routeIs('my-work.monthly-report*')) || request()->routeIs('work-entries.*')])
         @endif
         @include('layouts.partials.sidebar-item', ['label' => 'Notifications', 'route' => 'notifications.index', 'active' => request()->routeIs('notifications.*')])
         @include('layouts.partials.sidebar-item', ['label' => 'My Profile', 'route' => 'profile.edit', 'active' => request()->routeIs('profile.*')])
         @if($permissions->contains('view projects'))
             @include('layouts.partials.sidebar-item', ['label' => 'Projects', 'route' => 'projects.index', 'active' => request()->routeIs('projects.*')])
         @endif
-        @if($isStaffOrIntern)
-            @include('layouts.partials.sidebar-item', ['label' => 'Task Tracker', 'route' => 'task-tracker.index', 'active' => request()->routeIs('task-tracker.*') || request()->routeIs('tasks.show') || request()->routeIs('subtasks.*')])
-        @elseif($canSeeTasks)
-            @include('layouts.partials.sidebar-item', ['label' => 'Tasks', 'route' => 'tasks.index', 'active' => request()->routeIs('tasks.*')])
+        @if($canSeeTasks)
+            @include('layouts.partials.sidebar-item', ['label' => 'Task Tracker', 'route' => 'task-tracker.index', 'active' => request()->routeIs('task-tracker.*') || request()->routeIs('tasks.*') || request()->routeIs('subtasks.*')])
         @endif
         @if($canSeeEvidence)
             @include('layouts.partials.sidebar-item', ['label' => 'Evidence'])
         @endif
-
-        <p data-sidebar-section class="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Performance</p>
         @if($canSeeReports)
             @include('layouts.partials.sidebar-item', ['label' => 'Reports', 'route' => 'my-work.monthly-report', 'active' => request()->routeIs('my-work.monthly-report*')])
         @endif
-        @if($isStaffOrIntern)
-            @include('layouts.partials.sidebar-item', ['label' => 'Printable Timesheet', 'route' => 'printable-timesheet.index', 'active' => request()->routeIs('printable-timesheet.*') || request()->routeIs('my-work.timesheet.print')])
+        @if($canSeePersonalActivities)
+            @include('layouts.partials.sidebar-item', ['label' => 'Printable Timesheet', 'route' => 'printable-timesheet.index', 'active' => request()->routeIs('printable-timesheet.*') || request()->routeIs('my-work.timesheet*')])
         @endif
+
         @if($canReviewReports)
+            <p data-sidebar-section class="px-3 pb-2 pt-5 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Oversight</p>
             @include('layouts.partials.sidebar-item', ['label' => 'Reports Awaiting My Review', 'route' => 'monthly-reports.reviews.index', 'active' => request()->routeIs('monthly-reports.*')])
         @endif
         @if($permissions->contains('view staff'))

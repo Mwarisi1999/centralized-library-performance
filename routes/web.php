@@ -76,12 +76,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/campus-reports/{campusReport}/projects.csv', [CampusMonthlyReportExportController::class, 'projectsCsvFinalized'])->name('campus-reports.projects-csv');
 
     Route::get('/my-work', [WorkEntryController::class, 'index'])->name('my-work.index');
-    Route::middleware('role:Staff|Intern')->group(function () {
-        Route::get('/daily-activities', [WorkEntryController::class, 'index'])->name('daily-activities.index');
-        Route::get('/weekly-activities', WeeklyActivityController::class)->name('weekly-activities.index');
-        Route::get('/task-tracker', TaskTrackerController::class)->name('task-tracker.index');
-        Route::get('/printable-timesheet', PrintableTimesheetController::class)->name('printable-timesheet.index');
-    });
+    Route::get('/daily-activities', [WorkEntryController::class, 'index'])->name('daily-activities.index');
+    Route::get('/weekly-activities', WeeklyActivityController::class)->name('weekly-activities.index');
+    Route::get('/task-tracker', TaskTrackerController::class)->name('task-tracker.index');
+    Route::get('/printable-timesheet', PrintableTimesheetController::class)->name('printable-timesheet.index');
     Route::get('/my-work/timesheet', [WorkEntryController::class, 'timesheet'])->name('my-work.timesheet');
     Route::get('/my-work/timesheet/print', [TimesheetReportController::class, 'print'])->name('my-work.timesheet.print');
     Route::get('/my-work/timesheet/pdf', [TimesheetReportController::class, 'pdf'])->name('my-work.timesheet.pdf');
