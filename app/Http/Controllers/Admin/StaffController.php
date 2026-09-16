@@ -355,7 +355,7 @@ class StaffController extends Controller
 
         return redirect()
             ->route('admin.staff.create')
-            ->with('success', 'Staff account created successfully. An activation invitation has been sent.');
+            ->with('success', 'Staff account created successfully. An activation invitation has been queued for delivery.');
     }
 
     public function resendInvitation(User $user, AccountInvitationService $invitations)
@@ -368,7 +368,7 @@ class StaffController extends Controller
 
         $invitations->send($user);
 
-        return back()->with('success', 'A new activation invitation has been sent.');
+        return back()->with('success', 'A new activation invitation has been queued for delivery.');
     }
 
     private function generateStaffNumber(): string

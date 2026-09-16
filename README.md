@@ -9,9 +9,27 @@
 
 ## Centralized Library Staff Performance System
 
-### Day 21 deployment note
+### Outgoing email operations
 
-The application provides `php artisan notifications:send-task-reminders --days=3` for deduplicated in-app due-date and overdue alerts. Production scheduling is intentionally not configured here; add this command to the Laravel scheduler/cron during the approved Day 21 deployment work.
+Workflow email is additive: database notifications remain immediate, while eligible email notifications are encrypted and queued on the `emails` queue after database commit. Configure SMTP credentials only in `.env`, set `WORKFLOW_EMAIL_ENABLED=true` after an SMTP probe succeeds, and run the email worker under a process supervisor:
+
+```bash
+php artisan queue:work --queue=emails --tries=3 --timeout=30
+```
+
+Send one generic SMTP probe only after configuring SMTP:
+
+```bash
+php artisan mail:test recipient@example.com
+```
+
+Deadline reminders run at configured milestones (three days before, one day before, on the due date, and 1/7/14/30 days overdue by default). The Laravel scheduler definition is included, but production must invoke it every minute:
+
+```cron
+* * * * * cd /absolute/path/to/application && php artisan schedule:run >> /dev/null 2>&1
+```
+
+This application sends email only. It does not connect to a mailbox, receive email, process replies, use IMAP, or expose inbound-email webhooks.
 
 ## About Laravel
 
