@@ -7,8 +7,10 @@ use App\Notifications\QueuedResetPassword;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -160,6 +162,93 @@ class ForgotPasswordTest extends TestCase
 
         $this->assertTrue(Hash::check('New-secure-password-123!', $user->fresh()->password));
         $this->assertFalse($notification->shouldSend($user->fresh(), 'mail'));
+    }
+
+    public function test_database_queue_preserves_the_plaintext_token_through_email_url_and_successful_reset(): void
+    {
+        config()->set('queue.default', 'database');
+        config()->set('mail.default', 'array');
+        $user = User::factory()->create();
+        $queuedToken = null;
+        $resetUrl = null;
+
+        Event::listen(NotificationSending::class, function (NotificationSending $event) use (&$queuedToken, &$resetUrl): void {
+            if (! $event->notification instanceof QueuedResetPassword || $event->channel !== 'mail') {
+                return;
+            }
+
+            $queuedToken = $event->notification->token;
+            $resetUrl = $event->notification->toMail($event->notifiable)->actionUrl;
+        });
+
+        $this->post(route('password.email'), ['email' => $user->email])
+            ->assertSessionHas('status', self::GENERIC_RESPONSE);
+
+        $storedHash = (string) DB::table('password_reset_tokens')->where('email', $user->email)->value('token');
+
+        $this->assertNotSame('', $storedHash);
+        $this->assertNotSame($storedHash, $queuedToken);
+        $this->assertDatabaseCount('jobs', 1);
+
+        $this->artisan('queue:work', [
+            '--queue' => 'password-resets',
+            '--once' => true,
+            '--tries' => 1,
+        ])->assertSuccessful();
+
+        $this->assertIsString($queuedToken);
+        $this->assertIsString($resetUrl);
+        $this->assertTrue(Hash::check($queuedToken, $storedHash));
+        $this->assertTrue(password_verify($queuedToken, $storedHash));
+        $this->assertTrue(app('auth.password')->broker('users')->tokenExists($user, $queuedToken));
+
+        $urlParts = parse_url($resetUrl);
+        parse_str($urlParts['query'] ?? '', $query);
+
+        $this->assertSame($queuedToken, rawurldecode(basename($urlParts['path'] ?? '')));
+        $this->assertSame($user->email, $query['email'] ?? null);
+        $this->assertTrue(app('auth.password')->broker('users')->tokenExists($user, $queuedToken));
+
+        $this->get($resetUrl)
+            ->assertOk()
+            ->assertSee('name="token" value="'.$queuedToken.'"', false)
+            ->assertSee('value="'.$user->email.'"', false);
+
+        $this->post(route('password.update'), [
+            'email' => $query['email'],
+            'token' => rawurldecode(basename($urlParts['path'])),
+            'password' => 'New-secure-password-456!',
+            'password_confirmation' => 'New-secure-password-456!',
+        ])->assertSessionDoesntHaveErrors();
+
+        $this->assertTrue(Hash::check('New-secure-password-456!', $user->fresh()->password));
+        $this->assertFalse(app('auth.password')->broker('users')->tokenExists($user->fresh(), $queuedToken));
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+    }
+
+    public function test_second_reset_request_makes_older_queued_notification_unsendable(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+
+        $this->post(route('password.email'), ['email' => $user->email]);
+        $firstJob = Queue::pushed(SendQueuedNotifications::class)->first();
+        $firstNotification = $firstJob?->notification;
+
+        $this->travel(61)->seconds();
+        $this->post(route('password.email'), ['email' => $user->email]);
+
+        $jobs = Queue::pushed(SendQueuedNotifications::class);
+        $secondNotification = $jobs->last()?->notification;
+
+        $this->assertCount(2, $jobs);
+        $this->assertInstanceOf(QueuedResetPassword::class, $firstNotification);
+        $this->assertInstanceOf(QueuedResetPassword::class, $secondNotification);
+        $this->assertNotSame($firstNotification->token, $secondNotification->token);
+        $this->assertFalse($firstNotification->shouldSend($user, 'mail'));
+        $this->assertTrue($secondNotification->shouldSend($user, 'mail'));
+        $this->assertFalse(app('auth.password')->broker('users')->tokenExists($user, $firstNotification->token));
+        $this->assertTrue(app('auth.password')->broker('users')->tokenExists($user, $secondNotification->token));
     }
 
     public function test_database_queue_payload_does_not_expose_the_reset_token(): void
