@@ -22,6 +22,10 @@ $integerList = static fn (string $value): array => array_values(array_unique(arr
 )));
 
 return [
+    'password_reset' => [
+        'queue' => env('PASSWORD_RESET_EMAIL_QUEUE', 'password-resets'),
+    ],
+
     'workflow_email' => [
         'enabled' => (bool) env('WORKFLOW_EMAIL_ENABLED', false),
         'events' => $workflowEmailEvents,

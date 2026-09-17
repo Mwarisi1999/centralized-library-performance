@@ -6,11 +6,11 @@ use App\Models\Project;
 use App\Models\ProjectCategory;
 use App\Models\Task;
 use App\Models\User;
+use App\Notifications\QueuedResetPassword;
 use App\Notifications\StaffAccountInvitation;
 use App\Notifications\WorkflowEmailNotification;
 use App\Notifications\WorkflowNotification;
 use App\Services\WorkflowNotificationService;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
@@ -203,7 +203,11 @@ class WorkflowEmailArchitectureTest extends TestCase
         $recipient = $this->activeUser();
 
         $this->assertSame(Password::RESET_LINK_SENT, Password::sendResetLink(['email' => $recipient->email]));
-        Notification::assertSentTo($recipient, ResetPassword::class);
+        Notification::assertSentTo($recipient, QueuedResetPassword::class, function (QueuedResetPassword $notification): bool {
+            return $notification instanceof ShouldQueueAfterCommit
+                && $notification instanceof ShouldBeEncrypted
+                && $notification->queue === 'password-resets';
+        });
     }
 
     public function test_terminal_queued_mail_failure_is_recorded_in_failed_jobs(): void
