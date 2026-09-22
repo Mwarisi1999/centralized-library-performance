@@ -20,7 +20,8 @@ class StaffAccountInvitation extends Notification implements ShouldBeEncrypted, 
         private readonly string $activationToken,
         private readonly int $expiresInHours,
     ) {
-        $this->onQueue((string) config('notifications.workflow_email.queue', 'emails'));
+        $this->onConnection((string) config('notifications.staff_invitation.connection', 'database'));
+        $this->onQueue((string) config('notifications.staff_invitation.queue', 'emails'));
         $this->afterCommit();
     }
 

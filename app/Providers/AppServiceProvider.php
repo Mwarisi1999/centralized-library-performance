@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Mail\BrevoTransport;
 use App\Models\Task;
 use App\Models\WorkEntry;
 use App\Observers\TaskObserver;
@@ -23,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->make('mail.manager')->extend(
+            'brevo',
+            fn (array $config): BrevoTransport => new BrevoTransport((string) ($config['api_key'] ?? '')),
+        );
+
         Task::observe(TaskObserver::class);
         WorkEntry::observe(WorkEntryObserver::class);
     }

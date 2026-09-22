@@ -169,6 +169,7 @@ class WorkflowEmailArchitectureTest extends TestCase
 
         $payload = (string) DB::table('jobs')->value('payload');
         $this->assertNotSame('', $payload);
+        $this->assertSame('emails', DB::table('jobs')->value('queue'));
         $this->assertStringNotContainsString($plainToken, $payload);
         $this->assertStringNotContainsString('Activate Account', $payload);
     }

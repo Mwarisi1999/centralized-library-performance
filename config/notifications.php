@@ -22,6 +22,11 @@ $integerList = static fn (string $value): array => array_values(array_unique(arr
 )));
 
 return [
+    'staff_invitation' => [
+        'connection' => 'database',
+        'queue' => env('STAFF_INVITATION_EMAIL_QUEUE', 'emails'),
+    ],
+
     'password_reset' => [
         'queue' => env('PASSWORD_RESET_EMAIL_QUEUE', 'password-resets'),
     ],
