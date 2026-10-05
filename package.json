@@ -17,7 +17,6 @@
         "@laravel/multiplex": "^0.4.1"
     },
     "dependencies": {
-        "apexcharts": "^4.7.0",
-        "chart.js": "^4.5.1"
+        "apexcharts": "^4.7.0"
     }
 }

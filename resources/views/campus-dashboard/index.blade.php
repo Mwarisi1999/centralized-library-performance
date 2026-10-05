@@ -2,37 +2,184 @@
 @section('title', 'Campus Dashboard')
 @section('page-title', 'Campus Dashboard')
 @section('content')
-<div class="space-y-7">
-    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div><p class="text-sm font-bold uppercase tracking-wider text-emerald-700">Campus performance</p><h2 class="mt-1 text-3xl font-bold text-slate-900">{{ $campus?->name ?? 'Campus not assigned' }} Dashboard</h2><p class="mt-2 text-slate-600">Management visibility for {{ $period->format('F Y') }}. Task figures use current status for assignments made in this period.</p></div>
-        <form method="GET" class="flex gap-2 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <select name="month" class="rounded-xl border-slate-300 text-sm">@foreach(range(1,12) as $month)<option value="{{ $month }}" @selected($period->month === $month)>{{ now()->month($month)->format('F') }}</option>@endforeach</select>
-            <select name="year" class="rounded-xl border-slate-300 text-sm">@foreach(range(now()->year + 1, 2000) as $year)<option value="{{ $year }}" @selected($period->year === $year)>{{ $year }}</option>@endforeach</select>
-            <button class="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">Apply</button>
-        </form>
-    </header>
+<div class="space-y-6">
+    @php
+        $pendingReports = $campus ? $summary['reports']->get('pending_review', 0) : 0;
+    @endphp
+
+    <x-dashboard.hero
+        :eyebrow="'Campus performance · '.$period->format('F Y')"
+        :title="($campus?->name ?? 'Campus not assigned').' Dashboard'"
+        :description="'Management visibility for '.$period->format('F Y').'. Task figures use current status for assignments made in this period.'"
+    >
+        @if($campus && $campus->is_active)
+            <span class="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/20">{{ $summary['staff_reporting'] }} of {{ $summary['total_staff'] }} staff reporting</span>
+            <span @class([
+                'rounded-full px-3 py-1 ring-1',
+                'bg-busitema-gold text-busitema-navy ring-busitema-gold' => $pendingReports > 0,
+                'bg-white/10 ring-white/20' => $pendingReports === 0,
+            ])>{{ $pendingReports }} {{ Str::plural('report', $pendingReports) }} pending review</span>
+            @if($summary['overdue_tasks'] > 0)
+                <span class="rounded-full bg-red-600 px-3 py-1 text-white ring-1 ring-red-500">{{ $summary['overdue_tasks'] }} overdue {{ Str::plural('task', $summary['overdue_tasks']) }}</span>
+            @endif
+        @endif
+        <x-slot:actions>
+            <x-dashboard.period-filter :period="$period" />
+        </x-slot:actions>
+    </x-dashboard.hero>
 
     @if(!$campus || !$campus->is_active)
         <section class="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">Your account does not have a valid active campus assignment. Contact an administrator to correct your staff profile.</section>
     @else
-        <section class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-            @foreach([['Total Staff',$summary['total_staff']],['Active Staff',$summary['active_staff']],['Active Projects',$summary['active_projects']],['Active Tasks',$summary['active_tasks']],['Completed Tasks',$summary['completed_tasks']],['Tasks In Progress',$summary['in_progress_tasks']],['Overdue Tasks',$summary['overdue_tasks']],['Hours Recorded',App\Models\WorkEntry::formatMinutes($summary['minutes'])],['Staff Reporting',$summary['staff_reporting']],['Reports Pending',$summary['reports']->get('pending_review',0)]] as [$label,$value])
-                <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-sm font-medium text-slate-500">{{ $label }}</p><p class="mt-2 text-2xl font-bold text-slate-900">{{ $value }}</p></div>
+        @php
+            [$hoursValue, $hoursUnit] = array_pad(explode(' ', App\Models\WorkEntry::formatMinutes($summary['minutes']), 2), 2, '');
+            $completionRate = $summary['active_tasks'] > 0 ? $summary['completed_tasks'] / $summary['active_tasks'] * 100 : 0;
+            $activeStaffShare = $summary['total_staff'] > 0 ? round($summary['active_staff'] / $summary['total_staff'] * 100) : 0;
+        @endphp
+
+        <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Campus summary">
+            <x-dashboard.gauge-card chart-id="campus-completion-chart" :rate="$completionRate" class="sm:col-span-2 lg:col-span-1 lg:row-span-2">
+                <span class="font-bold text-heading">{{ $summary['completed_tasks'] }}</span> of
+                <span class="font-bold text-heading">{{ $summary['active_tasks'] }}</span> campus {{ Str::plural('task', $summary['active_tasks']) }} completed
+            </x-dashboard.gauge-card>
+
+            <x-dashboard.highlight-card label="Hours Recorded" :value="$hoursValue" :unit="$hoursUnit" note="Campus staff time this period">
+                <strong class="font-bold">{{ $summary['staff_reporting'] }}</strong> {{ Str::plural('staff member', $summary['staff_reporting']) }} reporting
+            </x-dashboard.highlight-card>
+
+            <x-dashboard.stat-card label="Total Staff" :value="$summary['total_staff']" icon="users" tone="blue" note="Assigned to this campus">
+                <div class="flex items-center justify-between text-xs font-semibold">
+                    <span class="text-busitema-blue">{{ $summary['active_staff'] }} active</span>
+                    <span class="text-slate-500">{{ $activeStaffShare }}%</span>
+                </div>
+                <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"><div class="h-full rounded-full bg-busitema-blue" style="width: {{ $activeStaffShare }}%"></div></div>
+            </x-dashboard.stat-card>
+            <x-dashboard.stat-card label="Active Projects" :value="$summary['active_projects']" icon="folder" tone="navy" note="Projects running on this campus" />
+            <x-dashboard.stat-card label="Completed Tasks" :value="$summary['completed_tasks']" icon="check" tone="blue" note="Assignments marked completed" />
+            <x-dashboard.stat-card label="Tasks In Progress" :value="$summary['in_progress_tasks']" icon="progress" tone="gold" note="Assignments currently underway" />
+            <x-dashboard.stat-card label="Overdue Tasks" :value="$summary['overdue_tasks']" icon="alert" :tone="$summary['overdue_tasks'] > 0 ? 'red' : 'navy'" :note="$summary['overdue_tasks'] > 0 ? 'Incomplete and past their due date' : 'Nothing past its due date'" />
+        </section>
+
+        <section class="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            <x-dashboard.panel title="Staff Task Status" subtitle="Campus assignments by current status.">
+                <div id="campus-task-status-chart" class="h-72" role="img" aria-label="Staff task status chart"></div>
+            </x-dashboard.panel>
+            <x-dashboard.panel title="Hours by Staff" subtitle="Recorded hours per staff member.">
+                <div id="campus-hours-staff-chart" class="h-72" role="img" aria-label="Hours by staff chart"></div>
+            </x-dashboard.panel>
+            <x-dashboard.panel title="Hours by Project" subtitle="Where campus time was spent." class="lg:col-span-2 xl:col-span-1">
+                <div id="campus-hours-project-chart" class="h-72" role="img" aria-label="Hours by project chart"></div>
+            </x-dashboard.panel>
+        </section>
+        <script type="application/json" id="campus-dashboard-chart-data">{!! json_encode($charts, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) !!}</script>
+
+        <x-campus-report-table title="Staff Performance Overview" subtitle="No ranking or inferred score is applied." :headers="['Staff Member','Position / Library','Hours','Days','Assigned','Completed','In Progress','Overdue','Completion','Report','']">
+            @forelse($staffRows as $row)
+                <tr>
+                    <td class="px-4 py-3"><div class="flex items-center gap-3"><x-user-avatar :user="$row['user']" class="h-9! w-9! text-xs!" /><span class="font-semibold text-heading">{{ $row['user']->name }}</span></div></td>
+                    <td class="px-4 py-3 text-slate-600">{{ $row['user']->staffProfile?->position?->name ?? '—' }}<br><span class="text-xs text-slate-500">{{ $row['user']->staffProfile?->library?->name ?? '—' }}</span></td>
+                    <td class="whitespace-nowrap px-4 py-3 font-semibold">{{ App\Models\WorkEntry::formatMinutes($row['minutes']) }}</td>
+                    <td class="px-4 py-3">{{ $row['days'] }}</td>
+                    <td class="px-4 py-3">{{ $row['assigned'] }}</td>
+                    <td class="px-4 py-3">{{ $row['completed'] }}</td>
+                    <td class="px-4 py-3">{{ $row['in_progress'] }}</td>
+                    <td @class(['px-4 py-3', 'font-bold text-red-600' => $row['overdue'] > 0])>{{ $row['overdue'] }}</td>
+                    <td class="px-4 py-3"><x-dashboard.meter :value="$row['completion_rate']" /></td>
+                    <td class="px-4 py-3"><x-status-badge :status="$row['report_status'] ? App\Models\MonthlyReport::label($row['report_status']) : 'No Report'" class="whitespace-nowrap" /></td>
+                    <td class="whitespace-nowrap px-4 py-3"><a class="font-semibold text-busitema-blue hover:underline" href="{{ route('performance.staff.show', ['staff'=>$row['user'],'month'=>$period->month,'year'=>$period->year]) }}">View Performance</a></td>
+                </tr>
+            @empty
+                <tr><td colspan="11" class="px-5 py-10 text-center text-slate-500">No staff are assigned to this campus.</td></tr>
+            @endforelse
+        </x-campus-report-table>
+
+        <x-campus-report-table title="Campus Projects" subtitle="Active projects with campus participation." :headers="['Project','Status','Progress','Dates','Campus Staff','Tasks','Completed','In Progress','Overdue','']">
+            @forelse($projects as $project)
+                @php($pt = $project->tasks)
+                <tr>
+                    <td class="px-4 py-3"><span class="font-mono text-xs font-bold text-busitema-blue">{{ $project->project_code }}</span><br><span class="font-semibold text-heading">{{ $project->title }}</span></td>
+                    <td class="px-4 py-3"><x-status-badge :status="App\Models\Project::label($project->status)" class="whitespace-nowrap" /></td>
+                    <td class="px-4 py-3"><x-dashboard.meter :value="$project->progress_percentage" tone="gold" /></td>
+                    <td class="whitespace-nowrap px-4 py-3 text-xs">{{ $project->start_date?->format('d M Y') ?? '—' }}<br><span class="text-slate-500">to {{ $project->due_date?->format('d M Y') ?? '—' }}</span></td>
+                    <td class="px-4 py-3">{{ $pt->flatMap->taskAssignees->pluck('user_id')->unique()->count() }}</td>
+                    <td class="px-4 py-3">{{ $pt->count() }}</td>
+                    <td class="px-4 py-3">{{ $pt->where('status','completed')->count() }}</td>
+                    <td class="px-4 py-3">{{ $pt->where('status','in_progress')->count() }}</td>
+                    @php($projectOverdue = $pt->where('is_overdue',true)->count())
+                    <td @class(['px-4 py-3', 'font-bold text-red-600' => $projectOverdue > 0])>{{ $projectOverdue }}</td>
+                    <td class="px-4 py-3">@can('view',$project)<a href="{{ route('projects.show',$project) }}" class="font-semibold text-busitema-blue hover:underline">View</a>@endcan</td>
+                </tr>
+            @empty
+                <tr><td colspan="10" class="px-5 py-10 text-center text-slate-500">No active campus projects.</td></tr>
+            @endforelse
+        </x-campus-report-table>
+
+        <section class="grid gap-6 lg:grid-cols-2">
+            @foreach([
+                'in_progress' => ['Tasks In Progress', 'border-busitema-blue'],
+                'due_soon' => ['Tasks Due Soon', 'border-busitema-gold'],
+                'overdue' => ['Overdue Tasks', 'border-red-600'],
+                'pending_review' => ['Tasks Pending Review', 'border-ink'],
+            ] as $key => [$heading, $accent])
+                <x-dashboard.panel :title="$heading">
+                    <x-slot:aside><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-heading">{{ count($taskSections[$key]) }}</span></x-slot:aside>
+                    <div class="space-y-3">
+                        @forelse($taskSections[$key] as $task)
+                            <div class="rounded-xl border border-l-4 border-slate-200 {{ $accent }} p-4">
+                                <div class="flex justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="font-mono text-xs font-bold text-busitema-blue">{{ $task->task_code }}</p>
+                                        <p class="font-semibold text-heading">{{ $task->title }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ $task->project?->title }} · {{ $task->assignees->pluck('name')->join(', ') ?: 'Unassigned' }}</p>
+                                    </div>
+                                    <span class="text-sm font-bold text-heading">{{ number_format($task->progress_percentage,1) }}%</span>
+                                </div>
+                                <div class="mt-2 flex justify-between text-xs text-slate-500">
+                                    <span>{{ App\Models\Task::label($task->status) }} · Due {{ $task->due_date?->format('d M Y') ?? '—' }}</span>
+                                    @can('view',$task)<a href="{{ route('tasks.show',$task) }}" class="font-semibold text-busitema-blue hover:underline">View</a>@endcan
+                                </div>
+                            </div>
+                        @empty
+                            <p class="rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">No matching tasks.</p>
+                        @endforelse
+                    </div>
+                </x-dashboard.panel>
             @endforeach
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm"><div class="border-b border-slate-200 p-5"><h3 class="text-lg font-bold">Staff Performance Overview</h3><p class="mt-1 text-sm text-slate-500">No ranking or inferred score is applied.</p></div><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr>@foreach(['Staff Member','Position / Library','Hours','Days','Assigned','Completed','In Progress','Overdue','Completion','Report',''] as $h)<th class="px-4 py-3">{{ $h }}</th>@endforeach</tr></thead><tbody class="divide-y divide-slate-100">
-            @forelse($staffRows as $row)<tr><td class="px-4 py-3 font-semibold text-slate-900">{{ $row['user']->name }}</td><td class="px-4 py-3 text-slate-600">{{ $row['user']->staffProfile?->position?->name ?? '—' }}<br><span class="text-xs">{{ $row['user']->staffProfile?->library?->name ?? '—' }}</span></td><td class="px-4 py-3">{{ App\Models\WorkEntry::formatMinutes($row['minutes']) }}</td><td class="px-4 py-3">{{ $row['days'] }}</td><td class="px-4 py-3">{{ $row['assigned'] }}</td><td class="px-4 py-3">{{ $row['completed'] }}</td><td class="px-4 py-3">{{ $row['in_progress'] }}</td><td class="px-4 py-3">{{ $row['overdue'] }}</td><td class="px-4 py-3">{{ number_format($row['completion_rate'],1) }}%</td><td class="px-4 py-3">{{ $row['report_status'] ? App\Models\MonthlyReport::label($row['report_status']) : 'No Report' }}</td><td class="px-4 py-3"><a class="font-semibold text-emerald-700" href="{{ route('performance.staff.show', ['staff'=>$row['user'],'month'=>$period->month,'year'=>$period->year]) }}">View Performance</a></td></tr>@empty<tr><td colspan="11" class="px-5 py-10 text-center text-slate-500">No staff are assigned to this campus.</td></tr>@endforelse
-        </tbody></table></div></section>
+        <section class="grid gap-6 lg:grid-cols-2">
+            <x-dashboard.panel title="Monthly Report Status" subtitle="Staff monthly reports for this period.">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    @foreach([
+                        ['Draft', $summary['reports']->get('draft', 0), 'bg-slate-400'],
+                        ['Pending Review', $summary['reports']->get('pending_review', 0), 'bg-busitema-gold'],
+                        ['Returned', $summary['reports']->get('returned_for_correction', 0), 'bg-red-600'],
+                        ['Approved', $summary['reports']->get('approved', 0), 'bg-busitema-blue'],
+                        ['No Report', $summary['no_report'], 'bg-ink'],
+                    ] as [$label, $count, $dot])
+                        <div class="rounded-xl border border-slate-200 p-4">
+                            <p class="flex items-center gap-2 text-sm text-slate-500"><span class="h-2 w-2 rounded-full {{ $dot }}"></span>{{ $label }}</p>
+                            <p class="mt-1 text-2xl font-extrabold text-heading">{{ $count }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </x-dashboard.panel>
 
-        <section class="grid gap-6 xl:grid-cols-3"><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">Staff Task Status</h3><div class="mt-4 h-64"><canvas id="campus-task-status-chart"></canvas></div></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">Hours by Staff</h3><div class="mt-4 h-64"><canvas id="campus-hours-staff-chart"></canvas></div></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">Hours by Project</h3><div class="mt-4 h-64"><canvas id="campus-hours-project-chart"></canvas></div></div></section>
-        <script type="application/json" id="campus-dashboard-chart-data">{!! json_encode($charts, JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT) !!}</script>
-
-        <section class="rounded-2xl border border-slate-200 bg-white shadow-sm"><div class="border-b border-slate-200 p-5"><h3 class="text-lg font-bold">Campus Projects</h3></div><div class="overflow-x-auto"><table class="min-w-full divide-y divide-slate-200 text-sm"><thead class="bg-slate-50"><tr>@foreach(['Project','Status','Progress','Dates','Campus Staff','Tasks','Completed','In Progress','Overdue',''] as $h)<th class="px-4 py-3 text-left text-xs uppercase text-slate-500">{{ $h }}</th>@endforeach</tr></thead><tbody class="divide-y divide-slate-100">@forelse($projects as $project) @php($pt=$project->tasks)<tr><td class="px-4 py-3"><span class="font-mono text-xs text-emerald-700">{{ $project->project_code }}</span><br><span class="font-semibold">{{ $project->title }}</span></td><td class="px-4 py-3">{{ App\Models\Project::label($project->status) }}</td><td class="px-4 py-3">{{ number_format($project->progress_percentage,1) }}%</td><td class="px-4 py-3">{{ $project->start_date?->format('d M Y') ?? '—' }}<br>{{ $project->due_date?->format('d M Y') ?? '—' }}</td><td class="px-4 py-3">{{ $pt->flatMap->taskAssignees->pluck('user_id')->unique()->count() }}</td><td class="px-4 py-3">{{ $pt->count() }}</td><td class="px-4 py-3">{{ $pt->where('status','completed')->count() }}</td><td class="px-4 py-3">{{ $pt->where('status','in_progress')->count() }}</td><td class="px-4 py-3">{{ $pt->where('is_overdue',true)->count() }}</td><td class="px-4 py-3">@can('view',$project)<a href="{{ route('projects.show',$project) }}" class="font-semibold text-emerald-700">View</a>@endcan</td></tr>@empty<tr><td colspan="10" class="px-5 py-10 text-center text-slate-500">No active campus projects.</td></tr>@endforelse</tbody></table></div></section>
-
-        <section class="grid gap-6 lg:grid-cols-2">@foreach(['in_progress'=>'Tasks In Progress','due_soon'=>'Tasks Due Soon','overdue'=>'Overdue Tasks','pending_review'=>'Tasks Pending Review'] as $key=>$heading)<div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">{{ $heading }}</h3><div class="mt-4 space-y-3">@forelse($taskSections[$key] as $task)<div class="rounded-xl border border-slate-200 p-4"><div class="flex justify-between gap-3"><div><p class="font-mono text-xs text-emerald-700">{{ $task->task_code }}</p><p class="font-semibold">{{ $task->title }}</p><p class="mt-1 text-xs text-slate-500">{{ $task->project?->title }} · {{ $task->assignees->pluck('name')->join(', ') ?: 'Unassigned' }}</p></div><span class="text-sm font-bold">{{ number_format($task->progress_percentage,1) }}%</span></div><div class="mt-2 flex justify-between text-xs text-slate-500"><span>{{ App\Models\Task::label($task->status) }} · Due {{ $task->due_date?->format('d M Y') ?? '—' }}</span>@can('view',$task)<a href="{{ route('tasks.show',$task) }}" class="font-semibold text-emerald-700">View</a>@endcan</div></div>@empty<p class="text-sm text-slate-500">No matching tasks.</p>@endforelse</div></div>@endforeach</section>
-
-        <section class="grid gap-6 lg:grid-cols-2"><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">Monthly Report Status</h3><div class="mt-4 grid grid-cols-2 gap-3">@foreach(['draft'=>'Draft','pending_review'=>'Pending Review','returned_for_correction'=>'Returned','approved'=>'Approved'] as $status=>$label)<div class="rounded-xl bg-slate-50 p-4"><p class="text-sm text-slate-500">{{ $label }}</p><p class="text-xl font-bold">{{ $summary['reports']->get($status,0) }}</p></div>@endforeach<div class="rounded-xl bg-slate-50 p-4"><p class="text-sm text-slate-500">No Report</p><p class="text-xl font-bold">{{ $summary['no_report'] }}</p></div></div></div><div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-bold">Recent Campus Activity</h3><div class="mt-4 space-y-4">@forelse($recentActivity as $activity)<div class="border-l-2 border-emerald-600 pl-3"><p class="font-semibold">{{ $activity['title'] }}</p><p class="text-sm text-slate-600">{{ $activity['description'] }}</p><p class="mt-1 text-xs text-slate-400">{{ $activity['user'] }} · {{ $activity['at']?->diffForHumans() }}</p></div>@empty<p class="text-sm text-slate-500">No recent campus activity.</p>@endforelse</div></div></section>
+            <x-dashboard.panel title="Recent Campus Activity" subtitle="Latest recorded events on this campus.">
+                <ol class="relative space-y-5 border-l-2 border-slate-200 pl-5">
+                    @forelse($recentActivity as $activity)
+                        <li class="relative">
+                            <span class="absolute -left-6.75 top-1.5 h-3 w-3 rounded-full border-2 border-white bg-busitema-gold ring-2 ring-busitema-gold/30"></span>
+                            <p class="font-semibold text-heading">{{ $activity['title'] }}</p>
+                            <p class="text-sm text-slate-600">{{ $activity['description'] }}</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ $activity['user'] }} · {{ $activity['at']?->diffForHumans() }}</p>
+                        </li>
+                    @empty
+                        <li class="text-sm text-slate-500">No recent campus activity.</li>
+                    @endforelse
+                </ol>
+            </x-dashboard.panel>
+        </section>
     @endif
 </div>
 @endsection

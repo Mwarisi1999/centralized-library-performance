@@ -1,15 +1,9 @@
-import Chart from 'chart.js/auto';
+import { bar, donut, draw, readJson } from './charts/apex-theme';
 
-const source = document.querySelector('#campus-dashboard-chart-data');
-if (source) {
-    const data = JSON.parse(source.textContent);
-    const options = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#6B6375', usePointStyle: true } } } };
-    const draw = (id, type, labels, values, label) => {
-        const canvas = document.querySelector(id);
-        if (!canvas || !values.some(Number)) return;
-        new Chart(canvas, { type, data: { labels, datasets: [{ label, data: values, backgroundColor: type === 'doughnut' ? ['#6B6375','#1E73BE','#F9D028','#13294B','#001F3F'] : '#1E73BE', borderRadius: 5 }] }, options: type === 'bar' ? { ...options, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } } : options });
-    };
-    draw('#campus-task-status-chart', 'doughnut', data.task_status.labels, data.task_status.values, 'Tasks');
-    draw('#campus-hours-staff-chart', 'bar', data.hours_by_staff.labels, data.hours_by_staff.values, 'Hours');
-    draw('#campus-hours-project-chart', 'bar', data.hours_by_project.labels, data.hours_by_project.values, 'Hours');
+const data = readJson('#campus-dashboard-chart-data');
+
+if (data) {
+    draw('#campus-task-status-chart', data.task_status, donut({ totalLabel: 'Tasks' }), 'No tasks assigned in this period.');
+    draw('#campus-hours-staff-chart', data.hours_by_staff, bar({ name: 'Hours', suffix: 'h' }), 'No hours recorded by staff in this period.');
+    draw('#campus-hours-project-chart', data.hours_by_project, bar({ name: 'Hours', suffix: 'h' }), 'No project hours recorded in this period.');
 }

@@ -29,7 +29,7 @@
         </button>
     </div>
 
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
+    <nav data-sidebar-scroll class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
         <p data-sidebar-section class="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Overview</p>
         @include('layouts.partials.sidebar-item', ['label' => 'Dashboard', 'route' => 'dashboard', 'active' => request()->routeIs('dashboard')])
 

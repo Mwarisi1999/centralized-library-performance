@@ -4,64 +4,76 @@
 @section('page-title', 'Dashboard')
 
 @section('content')
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-l-4 border-emerald-700 p-6 sm:p-8 lg:p-10">
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Time Sheet System</p>
-            <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900">Welcome, {{ auth()->user()->name }}</h2>
-            <p class="mt-3 text-slate-600">
-                You are signed in as <strong class="font-semibold text-slate-800">{{ auth()->user()->getRoleNames()->join(', ') ?: 'User' }}</strong>.
-            </p>
-        </div>
-    </section>
+    @php
+        $user = auth()->user();
+        $isAdministrator = $user->hasRole('Administrator');
+    @endphp
+    @if($isAdministrator)
+        @php
+            $activeAccounts = max(0, $adminSummary['users'] - $adminSummary['inactive_accounts']);
+            $activeShare = $adminSummary['users'] > 0 ? round($activeAccounts / $adminSummary['users'] * 100) : 0;
+            $awaitingReview = $adminSummary['pending_task_reviews'] + $adminSummary['pending_reports'];
+        @endphp
+    @endif
+
+    <x-dashboard.hero
+        :eyebrow="$isAdministrator ? 'Administrator console' : 'Time Sheet System'"
+        :title="'Welcome, '.$user->name"
+        heading-id="welcome-heading"
+        :description="'You are signed in as '.($user->getRoleNames()->join(', ') ?: 'User').'.'.($isAdministrator ? ' Manage access, organization data, and application governance from one place.' : '')"
+    >
+        @if($isAdministrator)
+            <span class="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/20">{{ $activeShare }}% accounts active</span>
+            <span @class([
+                'rounded-full px-3 py-1 ring-1',
+                'bg-busitema-gold text-busitema-navy ring-busitema-gold' => $awaitingReview > 0,
+                'bg-white/10 ring-white/20' => $awaitingReview === 0,
+            ])>{{ $awaitingReview }} {{ Str::plural('item', $awaitingReview) }} awaiting review</span>
+        @else
+            <span class="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/20">{{ now()->format('l, d F Y') }}</span>
+        @endif
+        <x-slot:actions>
+            @if($isAdministrator)
+                <nav class="flex flex-wrap gap-2" aria-label="Administrator quick actions">
+                    <a href="{{ route('admin.staff.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/20">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
+                        Staff Management
+                    </a>
+                    <a href="{{ route('admin.organization.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/20">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
+                        Organization Setup
+                    </a>
+                    <a href="{{ route('admin.administration.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-busitema-gold px-4 py-2.5 text-sm font-bold text-busitema-navy shadow-sm transition hover:bg-busitema-yellow">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
+                        Administration
+                    </a>
+                </nav>
+            @else
+                @php
+                    $heroLinks = array_filter([
+                        $user->hasRole('University Librarian') && $user->can('view university dashboard') ? ['University Dashboard', route('university-dashboard.index')] : null,
+                        $user->hasRole('Campus Librarian') && $user->can('view campus dashboard') ? ['Campus Dashboard', route('campus-dashboard.index')] : null,
+                        $user->hasAnyRole(['Staff', 'Intern']) ? ['Daily Activities', route('daily-activities.index')] : null,
+                        $user->hasAnyRole(['Staff', 'Intern']) ? ['Task Tracker', route('task-tracker.index')] : null,
+                    ]);
+                @endphp
+                @foreach(array_values($heroLinks) as $index => [$label, $url])
+                    <a href="{{ $url }}" @class([
+                        'inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm transition',
+                        'bg-busitema-gold font-bold text-busitema-navy shadow-sm hover:bg-busitema-yellow' => $index === 0,
+                        'bg-white/10 font-semibold text-white ring-1 ring-white/25 hover:bg-white/20' => $index > 0,
+                    ])>{{ $label }} <span aria-hidden="true">&rarr;</span></a>
+                @endforeach
+            @endif
+        </x-slot:actions>
+    </x-dashboard.hero>
 
     @if($notifications->isNotEmpty())
         <section class="mt-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm" aria-labelledby="notifications-heading"><div class="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4"><div><h2 id="notifications-heading" class="text-lg font-bold text-emerald-950">Notifications requiring attention</h2><p class="mt-1 text-sm text-emerald-800">Your latest unread workflow updates.</p></div><a href="{{ route('notifications.index') }}" class="text-sm font-semibold text-emerald-800">View all</a></div><div class="divide-y divide-slate-100">@foreach($notifications as $notification)<form method="POST" action="{{ route('notifications.read',$notification) }}" class="flex items-start justify-between gap-4 p-4 sm:px-5">@csrf<div><p class="font-semibold">{{ data_get($notification->data,'title') }}</p><p class="mt-1 text-sm text-slate-600">{{ data_get($notification->data,'message') }}</p><p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p></div><button class="shrink-0 text-sm font-semibold text-emerald-700">Open</button></form>@endforeach</div></section>
     @endif
 
     @if(auth()->user()->hasRole('Administrator'))
-        @php
-            $activeAccounts = max(0, $adminSummary['users'] - $adminSummary['inactive_accounts']);
-            $activeShare = $adminSummary['users'] > 0 ? round($activeAccounts / $adminSummary['users'] * 100) : 0;
-            $awaitingReview = $adminSummary['pending_task_reviews'] + $adminSummary['pending_reports'];
-        @endphp
-
-        <section class="mt-6 space-y-6" aria-labelledby="admin-overview-heading">
-            <div class="relative overflow-hidden rounded-2xl bg-ink p-6 pl-8 text-white shadow-sm sm:p-8 sm:pl-10">
-                <div class="pointer-events-none absolute inset-0 opacity-[0.07]" style="background-image: radial-gradient(circle, #f9d028 1px, transparent 1px); background-size: 18px 18px;" aria-hidden="true"></div>
-                <div class="pointer-events-none absolute inset-y-0 left-0 w-1.5 bg-busitema-gold" aria-hidden="true"></div>
-
-                <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.2em] text-busitema-gold">Administrator console</p>
-                        <h2 id="admin-overview-heading" class="mt-2 text-2xl font-bold text-white sm:text-3xl">Organisation overview</h2>
-                        <p class="mt-2 max-w-xl text-sm text-white/75">Manage access, organization data, and application governance from one place.</p>
-                        <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-                            <span class="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/20">{{ $activeShare }}% accounts active</span>
-                            <span @class([
-                                'rounded-full px-3 py-1 ring-1',
-                                'bg-busitema-gold text-busitema-navy ring-busitema-gold' => $awaitingReview > 0,
-                                'bg-white/10 ring-white/20' => $awaitingReview === 0,
-                            ])>{{ $awaitingReview }} {{ Str::plural('item', $awaitingReview) }} awaiting review</span>
-                        </div>
-                    </div>
-
-                    <nav class="flex flex-wrap gap-2" aria-label="Administrator quick actions">
-                        <a href="{{ route('admin.staff.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/20">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" /></svg>
-                            Staff Management
-                        </a>
-                        <a href="{{ route('admin.organization.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 transition hover:bg-white/20">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
-                            Organization Setup
-                        </a>
-                        <a href="{{ route('admin.administration.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-busitema-gold px-4 py-2.5 text-sm font-bold text-busitema-navy shadow-sm transition hover:bg-busitema-yellow">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" /></svg>
-                            Administration
-                        </a>
-                    </nav>
-                </div>
-            </div>
-
+        <section class="mt-6 space-y-6" aria-label="Organisation overview">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <x-dashboard.stat-card label="Users" :value="number_format($adminSummary['users'])" icon="users" tone="blue" :href="route('admin.staff.index')" note="Registered accounts">
                     <div class="flex items-center justify-between text-xs font-semibold">
@@ -129,32 +141,15 @@
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article class="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:col-span-2 lg:col-span-1 lg:row-span-2">
-                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Completion Rate</p>
-                <div id="completion-rate-chart" data-rate="{{ round((float) $summary['completion_rate'], 1) }}" class="flex flex-1 items-center justify-center" role="img" aria-label="Completion rate {{ number_format($summary['completion_rate'], 1) }}%">
-                    <p class="py-10 text-4xl font-extrabold text-heading">{{ number_format($summary['completion_rate'], 1) }}%</p>
-                </div>
-                <p class="text-center text-sm text-slate-500">
-                    <span class="font-bold text-heading">{{ $summary['completed_tasks'] }}</span> of
-                    <span class="font-bold text-heading">{{ $summary['assigned_tasks'] }}</span> assigned {{ Str::plural('task', $summary['assigned_tasks']) }} completed
-                </p>
-            </article>
+            <x-dashboard.gauge-card chart-id="completion-rate-chart" :rate="$summary['completion_rate']" class="sm:col-span-2 lg:col-span-1 lg:row-span-2">
+                <span class="font-bold text-heading">{{ $summary['completed_tasks'] }}</span> of
+                <span class="font-bold text-heading">{{ $summary['assigned_tasks'] }}</span> assigned {{ Str::plural('task', $summary['assigned_tasks']) }} completed
+            </x-dashboard.gauge-card>
 
-            <article class="flex flex-col rounded-2xl border-t-4 border-busitema-gold bg-ink p-5 text-white shadow-sm">
-                <div class="flex items-start justify-between gap-4">
-                    <p class="text-xs font-bold uppercase tracking-wider text-white/70">This Month</p>
-                    <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-busitema-gold/15 text-busitema-gold ring-1 ring-busitema-gold/30">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                    </span>
-                </div>
-                @php [$hoursValue, $hoursUnit] = array_pad(explode(' ', $summary['hours_this_month'], 2), 2, ''); @endphp
-                <p class="mt-1 text-3xl font-extrabold tracking-tight text-white">{{ $hoursValue }} <span class="text-lg font-semibold text-white/70">{{ $hoursUnit }}</span></p>
-                <p class="mt-1.5 text-sm text-white/70">Recorded time this calendar month</p>
-                <div class="mt-auto flex items-center gap-2 border-t border-white/15 pt-4 text-sm">
-                    <svg class="h-4 w-4 text-busitema-gold" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
-                    <span><strong class="font-bold">{{ $summary['days_reported'] }}</strong> {{ Str::plural('day', $summary['days_reported']) }} reported</span>
-                </div>
-            </article>
+            @php [$hoursValue, $hoursUnit] = array_pad(explode(' ', $summary['hours_this_month'], 2), 2, ''); @endphp
+            <x-dashboard.highlight-card label="This Month" :value="$hoursValue" :unit="$hoursUnit" note="Recorded time this calendar month">
+                <strong class="font-bold">{{ $summary['days_reported'] }}</strong> {{ Str::plural('day', $summary['days_reported']) }} reported
+            </x-dashboard.highlight-card>
 
             <x-dashboard.stat-card label="Active Projects" :value="$summary['active_projects']" icon="folder" tone="navy" note="Projects you own or actively participate in" />
             <x-dashboard.stat-card label="Assigned Tasks" :value="$summary['assigned_tasks']" icon="list" tone="blue" note="Your active, non-cancelled assignments" />

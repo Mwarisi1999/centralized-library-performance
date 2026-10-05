@@ -3,6 +3,7 @@ import './campus-dashboard-charts';
 import './university-dashboard-charts';
 import './weekly-activities';
 import './performance-charts';
+import './dashboard-gauges';
 
 const sidebar = document.querySelector('#app-sidebar');
 const sidebarOverlay = document.querySelector('#sidebar-overlay');

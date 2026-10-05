@@ -191,6 +191,15 @@
     transition-timing-function: ease-out;
 }
 
+[data-sidebar-scroll] {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+[data-sidebar-scroll]::-webkit-scrollbar {
+    display: none;
+}
+
 @media (min-width: 64rem) {
     html[data-sidebar-collapsed='true'] #app-sidebar {
         width: 5rem;
