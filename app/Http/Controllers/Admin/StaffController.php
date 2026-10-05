@@ -79,7 +79,7 @@ class StaffController extends Controller
                 ->orderBy('name')
                 ->get(),
             'roles' => Role::query()->orderBy('name')->get(),
-            'positions' => Position::query()->where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::query()->where('is_active', true)->inRankOrder()->get(),
             'summary' => [
                 'total' => (clone $visibleStaff)->count(),
                 'campus_librarians' => (clone $visibleStaff)->role('Campus Librarian')->count(),
@@ -96,7 +96,7 @@ class StaffController extends Controller
         return view('admin.staff.create', [
             'campuses' => Campus::where('is_active', true)->orderBy('name')->get(),
             'libraries' => Library::where('is_active', true)->orderBy('name')->get(),
-            'positions' => Position::where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::where('is_active', true)->inRankOrder()->get(),
             'roles' => Role::orderBy('name')->get(),
             'supervisors' => User::role([
                 'University Librarian',
@@ -140,7 +140,7 @@ class StaffController extends Controller
             'user' => $user,
             'campuses' => Campus::query()->where('is_active', true)->orderBy('name')->get(),
             'libraries' => Library::query()->where('is_active', true)->orderBy('name')->get(),
-            'positions' => Position::query()->where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::query()->where('is_active', true)->inRankOrder()->get(),
             'roles' => Role::query()->orderBy('name')->get(),
             'supervisors' => User::query()
                 ->role(['University Librarian', 'Campus Librarian', 'Staff'])
