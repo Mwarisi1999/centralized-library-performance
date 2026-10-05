@@ -32,6 +32,7 @@ class OrganizationController extends Controller
         $search = trim((string) data_get($validated, 'search', ''));
         $records = $class::query()->withTrashed()
             ->when($entity === 'libraries', fn ($query) => $query->with('campus'))
+            ->when($entity === 'positions', fn ($query) => $query->with('jobDetail'))
             ->when($search, function ($query) use ($entity, $search) {
                 $query->where(function ($nested) use ($entity, $search) {
                     foreach ($this->searchableColumns($entity) as $index => $column) {
@@ -40,7 +41,14 @@ class OrganizationController extends Controller
                     }
                 });
             })
-            ->withCount($this->usageRelation($entity))->orderBy('name')->paginate(20)->withQueryString();
+            ->withCount($this->usageRelation($entity))
+            ->when(
+                $entity === 'positions',
+                fn ($query) => $query->inRankOrder(),
+                fn ($query) => $query->orderBy('name')
+            )
+            ->paginate(20)
+            ->withQueryString();
 
         return view('admin.organization.index', compact('entity', 'label', 'records'));
     }

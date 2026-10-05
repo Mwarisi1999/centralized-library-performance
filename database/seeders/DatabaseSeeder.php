@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             CampusSeeder::class,
             LibrarySeeder::class,
             PositionSeeder::class,
+            PositionJobDetailSeeder::class,
             ProjectCategorySeeder::class,
             RolePermissionSeeder::class,
             AdminUserSeeder::class,

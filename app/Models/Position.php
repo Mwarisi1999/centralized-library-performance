@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Position extends Model
@@ -29,5 +30,10 @@ class Position extends Model
     public function staffProfiles()
     {
         return $this->hasMany(StaffProfile::class);
+    }
+
+    public function jobDetail(): HasOne
+    {
+        return $this->hasOne(PositionJobDetail::class);
     }
 }
