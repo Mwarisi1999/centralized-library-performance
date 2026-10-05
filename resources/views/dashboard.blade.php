@@ -6,6 +6,9 @@
 @section('content')
     @php
         $user = auth()->user();
+        $user->loadMissing('staffProfile.position.jobDetail');
+        $assignedPosition = $user->staffProfile?->position;
+        $jobDetail = $assignedPosition?->jobDetail;
         $isAdministrator = $user->hasRole('Administrator');
     @endphp
     @if($isAdministrator)
@@ -67,6 +70,20 @@
             @endif
         </x-slot:actions>
     </x-dashboard.hero>
+
+    @if($jobDetail)
+        <section class="mt-6 flex flex-col gap-4 rounded-2xl border border-blue-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6" aria-labelledby="current-jd-heading">
+            <div class="flex items-start gap-4">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 font-extrabold text-busitema-blue" aria-hidden="true">JD</span>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-busitema-blue">Your current job description</p>
+                    <h2 id="current-jd-heading" class="mt-1 text-xl font-bold text-slate-950">{{ $assignedPosition->name }}</h2>
+                    <p class="mt-1 text-sm text-slate-600">Review your job purpose and {{ count($jobDetail->duties) }} assigned {{ Str::plural('duty', count($jobDetail->duties)) }} before recording your work.</p>
+                </div>
+            </div>
+            <a href="{{ route('job-description.show') }}" class="inline-flex shrink-0 justify-center rounded-xl bg-busitema-blue px-5 py-2.5 text-sm font-bold text-white transition hover:bg-busitema-deep-blue">View my job description</a>
+        </section>
+    @endif
 
     @if($notifications->isNotEmpty())
         <section class="mt-6 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm" aria-labelledby="notifications-heading"><div class="flex items-center justify-between border-b border-emerald-100 bg-emerald-50 px-5 py-4"><div><h2 id="notifications-heading" class="text-lg font-bold text-emerald-950">Notifications requiring attention</h2><p class="mt-1 text-sm text-emerald-800">Your latest unread workflow updates.</p></div><a href="{{ route('notifications.index') }}" class="text-sm font-semibold text-emerald-800">View all</a></div><div class="divide-y divide-slate-100">@foreach($notifications as $notification)<form method="POST" action="{{ route('notifications.read',$notification) }}" class="flex items-start justify-between gap-4 p-4 sm:px-5">@csrf<div><p class="font-semibold">{{ data_get($notification->data,'title') }}</p><p class="mt-1 text-sm text-slate-600">{{ data_get($notification->data,'message') }}</p><p class="mt-1 text-xs text-slate-400">{{ $notification->created_at->diffForHumans() }}</p></div><button class="shrink-0 text-sm font-semibold text-emerald-700">Open</button></form>@endforeach</div></section>

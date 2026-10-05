@@ -10,6 +10,7 @@ use App\Http\Controllers\CampusMonthlyReportExportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IndividualMonthlyReportController;
 use App\Http\Controllers\IndividualMonthlyReportExportController;
+use App\Http\Controllers\JobDescriptionController;
 use App\Http\Controllers\MonthlyReportReviewController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PrintableTimesheetController;
@@ -45,6 +46,7 @@ Route::middleware(['guest', 'throttle:6,1'])->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/my-job-description', JobDescriptionController::class)->name('job-description.show');
     Route::get('/profile/edit', [ProfileController::class, 'show'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/picture', [ProfileController::class, 'updatePicture'])->name('profile.picture.update');

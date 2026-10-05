@@ -13,6 +13,8 @@
     $canReviewReports = $hasAnyPermission(['view supervised reports', 'review reports', 'approve reports', 'return reports']);
     $canSeeEvidence = $hasAnyPermission(['upload evidence', 'view supervised evidence', 'view all evidence']);
     $canSeeOrganization = $hasAnyPermission(['manage campuses', 'manage libraries', 'manage positions', 'manage project categories']);
+    $user->loadMissing('staffProfile.position.jobDetail');
+    $hasJobDescription = $user->staffProfile?->position?->jobDetail !== null;
 @endphp
 
 <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col overflow-hidden bg-busitema-blue text-white shadow-2xl transition-transform duration-200 ease-out lg:inset-y-2 lg:left-1 lg:translate-x-0 lg:rounded-2xl" aria-label="Main navigation">
@@ -51,6 +53,9 @@
         @endif
         @include('layouts.partials.sidebar-item', ['label' => 'Notifications', 'route' => 'notifications.index', 'active' => request()->routeIs('notifications.*')])
         @include('layouts.partials.sidebar-item', ['label' => 'My Profile', 'route' => 'profile.edit', 'active' => request()->routeIs('profile.*')])
+        @if($hasJobDescription)
+            @include('layouts.partials.sidebar-item', ['label' => 'My Job Description', 'route' => 'job-description.show', 'active' => request()->routeIs('job-description.*')])
+        @endif
         @if($permissions->contains('view projects'))
             @include('layouts.partials.sidebar-item', ['label' => 'Projects', 'route' => 'projects.index', 'active' => request()->routeIs('projects.*')])
         @endif

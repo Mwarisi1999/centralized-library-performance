@@ -36,7 +36,20 @@ class WorkEntryController extends Controller
         Gate::authorize('create', WorkEntry::class);
         $context = $this->workContextFor($request->user());
 
-        return view('work-entries.create', $context);
+        return view('work-entries.create', [
+            ...$context,
+            'jobDuty' => $this->selectedJobDuty($request),
+        ]);
+    }
+
+    private function selectedJobDuty(Request $request): ?string
+    {
+        $dutyIndex = $request->integer('duty', -1);
+        $duties = $request->user()
+            ->loadMissing('staffProfile.position.jobDetail')
+            ->staffProfile?->position?->jobDetail?->duties ?? [];
+
+        return array_key_exists($dutyIndex, $duties) ? $duties[$dutyIndex] : null;
     }
 
     public function edit(Request $request, WorkEntry $workEntry)
