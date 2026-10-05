@@ -9,6 +9,26 @@
 
 ## Time Sheet System
 
+### Local role-testing accounts
+
+Create or reset one active account for every application role with:
+
+```bash
+php artisan db:seed --class=TestAccountSeeder
+```
+
+This seeder is restricted to the `local` and `testing` environments. All six
+accounts use the password `TestAccount123!`:
+
+| Role | Email |
+| --- | --- |
+| Administrator | `test.admin@example.test` |
+| University Librarian | `test.university-librarian@example.test` |
+| Campus Librarian | `test.campus-librarian@example.test` |
+| M&E Officer | `test.me-officer@example.test` |
+| Staff | `test.staff@example.test` |
+| Intern | `test.intern@example.test` |
+
 ### Outgoing email operations
 
 Workflow email is additive: database notifications remain immediate, while eligible email notifications are encrypted and queued on the `emails` queue after database commit. Configure SMTP credentials only in `.env`, set `WORKFLOW_EMAIL_ENABLED=true` after an SMTP probe succeeds, and run the email worker under a process supervisor:
