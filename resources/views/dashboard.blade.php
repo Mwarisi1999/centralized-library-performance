@@ -6,7 +6,7 @@
 @section('content')
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="border-l-4 border-emerald-700 p-6 sm:p-8 lg:p-10">
-            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Centralized Library Staff Performance System</p>
+            <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Time Sheet System</p>
             <h2 class="mt-3 text-3xl font-bold tracking-tight text-slate-900">Welcome, {{ auth()->user()->name }}</h2>
             <p class="mt-3 text-slate-600">
                 You are signed in as <strong class="font-semibold text-slate-800">{{ auth()->user()->getRoleNames()->join(', ') ?: 'User' }}</strong>.

@@ -1,7 +1,7 @@
 @extends('layouts.report')
 @section('title', 'Monthly Staff Timesheet - '.$period['label'])
 @section('content')
-<header class="masthead"><h1>Busitema University</h1><p class="system">Centralized Library Staff Performance System</p><h2>Monthly Staff Timesheet</h2></header>
+<header class="masthead"><h1>Busitema University</h1><p class="system">Time Sheet System</p><h2>Monthly Staff Timesheet</h2></header>
 <table class="meta"><tr>
     @foreach([['Staff Name',$staff['name']],['Position',$staff['position']],['Campus',$staff['campus']],['Library',$staff['library']]] as [$label,$value])<td><span class="label">{{ $label }}</span>{{ $value ?: '—' }}</td>@endforeach
 </tr><tr><td colspan="2"><span class="label">Supervisor</span>{{ $staff['supervisor'] ?: '—' }}</td><td colspan="2"><span class="label">Reporting Period</span>{{ $period['label'] }}</td></tr></table>

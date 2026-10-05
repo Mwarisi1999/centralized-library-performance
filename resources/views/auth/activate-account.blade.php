@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activate Account | Centralized Library Staff Performance System</title>
+    <title>Activate Account | Time Sheet System</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-slate-100">
@@ -20,7 +20,7 @@
         <div class="mt-7 text-center">
             <p class="text-sm font-semibold uppercase tracking-wide text-emerald-700">Account Security</p>
             <h1 class="mt-2 text-3xl font-bold text-slate-900">Activate your account</h1>
-            <p class="mt-3 text-sm leading-6 text-slate-500">Create a secure password to finish activating your Centralized Library Staff Performance System account.</p>
+            <p class="mt-3 text-sm leading-6 text-slate-500">Create a secure password to finish activating your Time Sheet System account.</p>
         </div>
 
         <div class="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-sm">

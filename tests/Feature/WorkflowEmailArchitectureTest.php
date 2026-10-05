@@ -131,7 +131,7 @@ class WorkflowEmailArchitectureTest extends TestCase
         $mail = $notification->toMail($recipient);
 
         $this->assertSame(['mail'], $notification->via($recipient));
-        $this->assertSame('Centralized Library Staff Performance System: New task assignment', $mail->subject);
+        $this->assertSame('Time Sheet System: New task assignment', $mail->subject);
         $this->assertSame('Hello Amina Librarian,', $mail->greeting);
         $this->assertContains('You were assigned TSK-0001: Catalogue audit.', $mail->introLines);
         $this->assertSame($url, $mail->actionUrl);

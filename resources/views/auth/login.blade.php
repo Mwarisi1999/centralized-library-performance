@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Login | Centralized Library Staff Performance System</title>
+    <title>Login | Time Sheet System</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -28,11 +28,11 @@
 
             <div class="max-w-xl">
                 <p class="text-emerald-300 font-semibold mb-4">
-                    STAFF PERFORMANCE MANAGEMENT
+                    TIME SHEET MANAGEMENT
                 </p>
 
                 <h1 class="text-4xl xl:text-5xl font-bold leading-tight text-white">
-                    Centralized Library Staff Performance System
+                    Time Sheet System
                 </h1>
 
                 <p class="mt-6 text-lg text-emerald-100 leading-relaxed">

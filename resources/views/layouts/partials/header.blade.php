@@ -12,7 +12,7 @@
         </button>
 
         <div class="min-w-0 flex-1">
-            <p class="truncate text-xs font-semibold uppercase tracking-wider text-emerald-700">@yield('section-label', 'Centralized Library')</p>
+            <p class="truncate text-xs font-semibold uppercase tracking-wider text-emerald-700">@yield('section-label', 'Time Sheet System')</p>
             <h1 class="truncate text-lg font-bold text-slate-900 sm:text-xl">@yield('page-title', 'Dashboard')</h1>
         </div>
 

@@ -30,8 +30,8 @@ class SendTestMail extends Command
 
         try {
             Mail::raw(
-                'This is a generic outbound email test from Busitema University’s Centralized Library Staff Performance System. No action is required.',
-                fn ($message) => $message->to($recipient)->subject('Centralized Library Staff Performance System email test'),
+                'This is a generic outbound email test from Busitema University’s Time Sheet System. No action is required.',
+                fn ($message) => $message->to($recipient)->subject('Time Sheet System email test'),
             );
         } catch (Throwable $exception) {
             $failure = $diagnostics->summarize($exception);

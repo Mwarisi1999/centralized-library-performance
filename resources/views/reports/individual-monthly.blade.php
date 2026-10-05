@@ -1,7 +1,7 @@
 @extends('layouts.report')
 @section('title', 'Individual Monthly Report - '.$period['label'])
 @section('content')
-<header class="masthead"><h1>Busitema University</h1><p class="system">Centralized Library Staff Performance System</p><h2>Individual Monthly Performance Report</h2></header>
+<header class="masthead"><h1>Busitema University</h1><p class="system">Time Sheet System</p><h2>Individual Monthly Performance Report</h2></header>
 <table class="meta"><tr><td><span class="label">Report Code</span>{{ $report?->report_code ?? 'Draft — not assigned' }}</td><td><span class="label">Status</span><span class="badge">{{ App\Models\MonthlyReport::label($status) }}</span></td><td colspan="2"><span class="label">Reporting Period</span>{{ $period['label'] }}</td></tr><tr>
 @foreach([['Staff',$staff['name']],['Position',$staff['position']],['Campus',$staff['campus']],['Library',$staff['library']]] as [$label,$value])<td><span class="label">{{ $label }}</span>{{ $value ?: '—' }}</td>@endforeach
 </tr><tr><td colspan="2"><span class="label">Supervisor</span>{{ $staff['supervisor'] ?: '—' }}</td><td colspan="2"><span class="label">Data Basis</span>{{ in_array($status, [App\Models\MonthlyReport::STATUS_PENDING_REVIEW, App\Models\MonthlyReport::STATUS_APPROVED], true) ? 'Frozen submitted snapshot' : 'Current reporting-period data' }}</td></tr></table>

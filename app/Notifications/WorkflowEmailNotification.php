@@ -30,7 +30,7 @@ class WorkflowEmailNotification extends Notification implements ShouldBeEncrypte
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject('Centralized Library Staff Performance System: '.data_get($this->payload, 'title', 'Workflow update'))
+            ->subject('Time Sheet System: '.data_get($this->payload, 'title', 'Workflow update'))
             ->greeting('Hello '.($notifiable->name ?: 'there').',')
             ->line(data_get($this->payload, 'message', 'A workflow item has been updated.'));
 
@@ -40,7 +40,7 @@ class WorkflowEmailNotification extends Notification implements ShouldBeEncrypte
         }
 
         return $message
-            ->line('This is an automated notification from Busitema University’s Centralized Library Staff Performance System.')
+            ->line('This is an automated notification from Busitema University’s Time Sheet System.')
             ->salutation('Busitema University Library');
     }
 
