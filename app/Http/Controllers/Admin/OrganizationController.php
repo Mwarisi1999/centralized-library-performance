@@ -7,9 +7,11 @@ use App\Models\Campus;
 use App\Models\Library;
 use App\Models\Position;
 use App\Models\ProjectCategory;
+use App\Services\JobDescriptionService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -60,10 +62,18 @@ class OrganizationController extends Controller
         return view('admin.organization.form', ['entity' => $entity, 'label' => $label, 'record' => null, 'campuses' => Campus::where('is_active', true)->orderBy('name')->get()]);
     }
 
-    public function store(Request $request, string $entity): RedirectResponse
+    public function store(Request $request, string $entity, JobDescriptionService $jobDescriptions): RedirectResponse
     {
         [$class] = $this->definition($request, $entity);
-        $class::create($this->validated($request, $entity));
+        $attributes = $this->validated($request, $entity);
+
+        DB::transaction(function () use ($class, $entity, $attributes, $request, $jobDescriptions) {
+            $record = $class::create($attributes);
+
+            if ($entity === 'positions') {
+                $this->syncJobDescription($record, $request, $jobDescriptions);
+            }
+        });
 
         return redirect()->route('admin.organization.index', $entity)->with('success', 'Organization record created successfully.');
     }
@@ -76,11 +86,19 @@ class OrganizationController extends Controller
         return view('admin.organization.form', ['entity' => $entity, 'label' => $label, 'record' => $model, 'campuses' => Campus::where('is_active', true)->orderBy('name')->get()]);
     }
 
-    public function update(Request $request, string $entity, int $record): RedirectResponse
+    public function update(Request $request, string $entity, int $record, JobDescriptionService $jobDescriptions): RedirectResponse
     {
         [$class] = $this->definition($request, $entity);
         $model = $class::withTrashed()->findOrFail($record);
-        $model->update($this->validated($request, $entity, $model));
+        $attributes = $this->validated($request, $entity, $model);
+
+        DB::transaction(function () use ($model, $entity, $attributes, $request, $jobDescriptions) {
+            $model->update($attributes);
+
+            if ($entity === 'positions') {
+                $this->syncJobDescription($model, $request, $jobDescriptions);
+            }
+        });
 
         return redirect()->route('admin.organization.index', $entity)->with('success', 'Organization record updated successfully.');
     }
@@ -93,6 +111,23 @@ class OrganizationController extends Controller
         $model->update(['is_active' => ! $model->is_active]);
 
         return back()->with('success', $model->is_active ? 'Record activated.' : 'Record deactivated. Existing history was preserved.');
+    }
+
+    /** Saves the position's job description and alerts the staff who hold that position. */
+    private function syncJobDescription(Position $position, Request $request, JobDescriptionService $jobDescriptions): void
+    {
+        $fields = ['salary_scale', 'reports_to', 'responsible_for', 'job_purpose', 'duties'];
+
+        // Requests that do not carry the job description section leave it untouched.
+        if (! $request->hasAny($fields)) {
+            return;
+        }
+
+        $detail = $jobDescriptions->sync($position, $request->only($fields));
+
+        if ($detail && $position->is_active && ! $position->trashed()) {
+            $jobDescriptions->notifyHolders($position, $detail);
+        }
     }
 
     private function definition(Request $request, string $entity): array
@@ -129,13 +164,29 @@ class OrganizationController extends Controller
             $rules['email'] = ['nullable', 'email', 'max:255'];
             $rules['phone'] = ['nullable', 'string', 'max:30'];
         }
+        if ($entity === 'positions') {
+            $rules['sort_order'] = ['nullable', 'integer', 'min:1', 'max:1000'];
+            $rules['salary_scale'] = ['nullable', 'string', 'max:50'];
+            $rules['reports_to'] = ['nullable', 'string', 'max:255'];
+            $rules['responsible_for'] = ['nullable', 'string', 'max:255'];
+            $rules['job_purpose'] = ['nullable', 'required_with:duties', 'string', 'max:5000'];
+            $rules['duties'] = ['nullable', 'required_with:job_purpose', 'string', 'max:20000'];
+        }
         if ($entity === 'campuses') {
             $rules['location'] = ['nullable', 'string', 'max:255'];
             $rules['email'] = ['nullable', 'email', 'max:255'];
             $rules['phone'] = ['nullable', 'string', 'max:30'];
         }
 
-        return array_replace($request->validate($rules), [
+        $validated = $request->validate($rules, [
+            'job_purpose.required_with' => 'Add the job purpose so staff understand the role behind these duties.',
+            'duties.required_with' => 'List at least one duty, one per line, for this job description.',
+        ]);
+
+        // Job description fields are stored on position_job_details, not on the position itself.
+        unset($validated['salary_scale'], $validated['reports_to'], $validated['responsible_for'], $validated['job_purpose'], $validated['duties']);
+
+        return array_replace($validated, [
             'is_active' => $request->boolean('is_active'),
         ]);
     }

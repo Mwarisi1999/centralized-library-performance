@@ -410,19 +410,16 @@ class PositionJobDetailSeeder extends Seeder
             ],
         ];
 
-        $positionIds = [];
-
+        // Only the standard positions are seeded. Job descriptions that administrators
+        // write for positions added later are left untouched when seeding re-runs.
         foreach ($details as $code => $detail) {
             $position = Position::where('code', $code)->firstOrFail();
-            $positionIds[] = $position->id;
 
             PositionJobDetail::updateOrCreate(
                 ['position_id' => $position->id],
                 $detail
             );
         }
-
-        PositionJobDetail::whereNotIn('position_id', $positionIds)->delete();
     }
 
     /** @return array<int, string> */

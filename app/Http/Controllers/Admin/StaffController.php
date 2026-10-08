@@ -9,11 +9,11 @@ use App\Models\Position;
 use App\Models\StaffProfile;
 use App\Models\User;
 use App\Services\AccountInvitationService;
+use App\Services\JobDescriptionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -151,7 +151,7 @@ class StaffController extends Controller
         ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user, JobDescriptionService $jobDescriptions)
     {
         $campusBasedRoles = ['Staff', 'Intern', 'Campus Librarian'];
 
@@ -223,6 +223,7 @@ class StaffController extends Controller
         });
 
         $validated = $validator->validate();
+        $previousPositionId = $user->staffProfile?->position_id;
 
         DB::transaction(function () use ($user, $validated, $campusBasedRoles) {
             $user->update([
@@ -252,6 +253,12 @@ class StaffController extends Controller
                 ]);
             }
         });
+
+        $newPositionId = $validated['position_id'] ?? null;
+
+        if ($newPositionId && (int) $newPositionId !== (int) $previousPositionId) {
+            $jobDescriptions->notifyAssignment($user->refresh(), Position::findOrFail($newPositionId));
+        }
 
         return redirect()
             ->route('admin.staff.show', $user)
@@ -373,14 +380,18 @@ class StaffController extends Controller
 
     private function generateStaffNumber(): string
     {
-        $lastProfile = StaffProfile::withTrashed()
-            ->orderByDesc('staff_number')
+        $highestNumber = StaffProfile::withTrashed()
+            ->where('staff_number', 'like', 'LIB-%')
             ->lockForUpdate()
-            ->first();
+            ->pluck('staff_number')
+            ->map(function (string $staffNumber): int {
+                return preg_match('/\ALIB-(\d+)\z/', $staffNumber, $matches)
+                    ? (int) $matches[1]
+                    : 0;
+            })
+            ->max() ?? 0;
 
-        $nextNumber = $lastProfile === null
-            ? 1
-            : ((int) Str::after($lastProfile->staff_number, 'LIB-')) + 1;
+        $nextNumber = $highestNumber + 1;
 
         return 'LIB-'.str_pad((string) $nextNumber, 6, '0', STR_PAD_LEFT);
     }

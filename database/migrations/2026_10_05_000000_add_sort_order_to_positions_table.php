@@ -16,6 +16,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('positions', function (Blueprint $table) {
+            $table->dropIndex(['sort_order']);
             $table->dropColumn('sort_order');
         });
     }

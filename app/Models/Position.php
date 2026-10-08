@@ -19,6 +19,13 @@ class Position extends Model
         'sort_order',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
     public function scopeInRankOrder(Builder $query): Builder
     {
         return $query

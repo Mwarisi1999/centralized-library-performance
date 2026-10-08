@@ -9,6 +9,7 @@ use App\Models\StaffProfile;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -282,6 +283,42 @@ class StaffManagementTest extends TestCase
             'user_id' => $member->id,
             'supervisor_id' => $supervisor->id,
             'staff_number' => 'LIB-000001',
+        ]);
+    }
+
+    public function test_staff_number_generation_ignores_other_number_formats(): void
+    {
+        Notification::fake();
+
+        $administrator = $this->administrator();
+        [, $campus, $library, $position] = $this->createStaffMember();
+        $other = User::factory()->create();
+        $other->assignRole('Staff');
+        StaffProfile::create([
+            'user_id' => $other->id,
+            'staff_number' => 'ZZZ-999999',
+            'campus_id' => $campus->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($administrator)
+            ->post(route('admin.staff.store'), [
+                'name' => 'New Library Staff',
+                'email' => 'new.library.staff@example.test',
+                'role' => 'Staff',
+                'campus_id' => $campus->id,
+                'library_id' => $library->id,
+                'position_id' => $position->id,
+                'employment_type' => 'permanent',
+                'start_date' => '2026-10-08',
+            ])
+            ->assertRedirect(route('admin.staff.create'));
+
+        $created = User::where('email', 'new.library.staff@example.test')->firstOrFail();
+
+        $this->assertDatabaseHas('staff_profiles', [
+            'user_id' => $created->id,
+            'staff_number' => 'LIB-000002',
         ]);
     }
 
