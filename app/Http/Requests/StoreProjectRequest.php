@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Position;
 use App\Models\Project;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreProjectRequest extends FormRequest
 {
@@ -13,6 +15,8 @@ class StoreProjectRequest extends FormRequest
         $this->merge([
             'campus_ids' => $this->input('campus_ids', []),
             'member_ids' => $this->input('member_ids', []),
+            'job_description_duties' => $this->input('job_description_duties', []),
+            'job_description_other' => $this->boolean('job_description_other'),
         ]);
     }
 
@@ -25,9 +29,10 @@ class StoreProjectRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'project_category_id' => [
-                'nullable',
-                Rule::exists('project_categories', 'id')->where('is_active', true),
+            'position_id' => [
+                'required',
+                'integer',
+                Rule::exists('positions', 'id')->where('is_active', true)->whereNull('deleted_at'),
             ],
             'description' => ['nullable', 'string'],
             'scope' => ['required', Rule::in(Project::SCOPES)],
@@ -59,6 +64,43 @@ class StoreProjectRequest extends FormRequest
             'progress_method' => ['required', Rule::in(Project::PROGRESS_METHODS)],
             'objectives' => ['nullable', 'string'],
             'expected_deliverables' => ['nullable', 'string'],
+            'job_description_duties' => ['array'],
+            'job_description_duties.*' => ['string', 'distinct', 'max:5000'],
+            'job_description_other' => ['boolean'],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                $selectedDuties = collect($this->input('job_description_duties', []))
+                    ->filter(fn ($duty) => is_string($duty) && trim($duty) !== '')
+                    ->values();
+
+                if ($selectedDuties->isEmpty() && ! $this->boolean('job_description_other')) {
+                    $validator->errors()->add(
+                        'job_description_duties',
+                        'Select at least one duty from the job description or select Other.',
+                    );
+                }
+
+                $project = $this->route('project');
+                $position = Position::query()->with('jobDetail')->find($this->integer('position_id'));
+                $currentDuties = collect($position?->jobDetail?->duties ?? []);
+                $existingDuties = $project instanceof Project
+                    && (int) $project->position_id === $this->integer('position_id')
+                    ? $project->jobDescriptionItems()->where('is_other', false)->pluck('duty_text')
+                    : collect();
+                $allowedDuties = $currentDuties->merge($existingDuties)->unique()->values();
+
+                if ($selectedDuties->diff($allowedDuties)->isNotEmpty()) {
+                    $validator->errors()->add(
+                        'job_description_duties',
+                        "One or more selected duties do not belong to the selected position's job description.",
+                    );
+                }
+            },
         ];
     }
 

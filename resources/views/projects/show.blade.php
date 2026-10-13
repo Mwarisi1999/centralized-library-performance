@@ -39,7 +39,7 @@
             <h3 class="text-lg font-bold text-slate-900">Project overview</h3>
             <dl class="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2">
                 @foreach([
-                    ['Category', $project->category?->name ?? 'Uncategorised'],
+                    ['Position', $project->position?->name ?? $project->category?->name ?? 'Not assigned'],
                     ['Campus Scope', $scopeLabel],
                     ['Owner', $project->owner->name],
                     ['Creator', $project->creator->name],
@@ -51,6 +51,22 @@
                     <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</dt><dd class="mt-2 font-semibold text-slate-800">{{ $value }}</dd></div>
                 @endforeach
             </dl>
+
+            <div class="mt-8 border-t border-slate-200 pt-7">
+                <h4 class="font-bold text-slate-900">Job description alignment</h4>
+                @if($project->jobDescriptionItems->isNotEmpty())
+                    <ul class="mt-3 space-y-2">
+                        @foreach($project->jobDescriptionItems as $item)
+                            <li class="flex items-start gap-2 text-sm leading-6 text-slate-600">
+                                <span class="mt-2 h-1.5 w-1.5 shrink-0 rounded-full {{ $item->is_other ? 'bg-amber-500' : 'bg-emerald-600' }}"></span>
+                                <span>{{ $item->duty_text }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-2 text-sm text-slate-500">This existing project has not yet been linked to a job-description duty.</p>
+                @endif
+            </div>
 
             <div class="mt-8 border-t border-slate-200 pt-7">
                 <div class="flex items-center justify-between"><div><h4 class="font-bold text-slate-900">Progress</h4><p class="mt-1 text-xs font-semibold text-slate-500">{{ $project->progress_method === 'tasks' ? 'Automatic — calculated from active tasks' : 'Manual' }}</p></div><span class="text-sm font-bold text-emerald-700">{{ number_format((float) $project->progress_percentage, 2) }}%</span></div>

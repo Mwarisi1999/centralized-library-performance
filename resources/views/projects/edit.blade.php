@@ -37,11 +37,12 @@
                 <label class="block text-sm font-semibold text-slate-700 md:col-span-2">Project Title
                     <input name="title" type="text" required value="{{ old('title', $project->title) }}" class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-emerald-600 focus:ring-emerald-600">
                 </label>
-                <label class="block text-sm font-semibold text-slate-700">Project Category
-                    <select name="project_category_id" class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal">
-                        <option value="">Select category</option>
-                        @foreach($categories as $category)<option value="{{ $category->id }}" @selected((string) old('project_category_id', $project->project_category_id) === (string) $category->id)>{{ $category->name }}</option>@endforeach
+                <label class="block text-sm font-semibold text-slate-700">Position
+                    <select name="position_id" required data-project-position class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal">
+                        <option value="">Select position</option>
+                        @foreach($positions as $position)<option value="{{ $position->id }}" @selected((string) old('position_id', $project->position_id) === (string) $position->id) @disabled(!$position->is_active)>{{ $position->name }}{{ !$position->is_active ? ' (Inactive)' : '' }}</option>@endforeach
                     </select>
+                    @error('position_id')<span class="mt-1 block text-xs font-semibold text-red-600">{{ $message }}</span>@enderror
                 </label>
                 <label class="block text-sm font-semibold text-slate-700">Project Owner
                     <select name="owner_id" required class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal">
@@ -56,6 +57,8 @@
                 </label>
             </div>
         </section>
+
+        @include('projects.partials.job-description-selection')
 
         <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <h3 class="text-lg font-bold text-slate-900">Scope and team</h3>

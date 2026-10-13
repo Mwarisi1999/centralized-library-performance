@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Campus;
+use App\Models\Position;
+use App\Models\PositionJobDetail;
 use App\Models\Project;
 use App\Models\ProjectCategory;
 use App\Models\StaffProfile;
@@ -23,6 +25,8 @@ class ProjectModuleTest extends TestCase
 
     private ProjectCategory $category;
 
+    private Position $position;
+
     private int $projectSequence = 0;
 
     protected function setUp(): void
@@ -35,6 +39,7 @@ class ProjectModuleTest extends TestCase
         $this->campusOne = Campus::create(['name' => 'Main Campus', 'code' => 'MAIN', 'is_active' => true]);
         $this->campusTwo = Campus::create(['name' => 'Eastern Campus', 'code' => 'EAST', 'is_active' => true]);
         $this->category = ProjectCategory::firstOrFail();
+        $this->position = Position::create(['name' => 'Project Position', 'code' => 'PRJ-POS', 'is_active' => true]);
     }
 
     public function test_authorized_roles_can_create_projects(): void
@@ -113,6 +118,53 @@ class ProjectModuleTest extends TestCase
         ]))->assertSessionHasErrors('due_date');
     }
 
+    public function test_creator_can_select_multiple_job_description_duties(): void
+    {
+        $administrator = $this->user('Administrator');
+        $position = Position::create(['name' => 'Digital Librarian', 'code' => 'DIG-LIB', 'is_active' => true]);
+        $detail = PositionJobDetail::create([
+            'position_id' => $position->id,
+            'job_purpose' => 'Manage digital library services.',
+            'duties' => ['Curate repository content', 'Train users on digital resources'],
+        ]);
+        $this->actingAs($administrator)->get(route('projects.create'))
+            ->assertOk()
+            ->assertSee('Job description alignment')
+            ->assertSee('Digital Librarian')
+            ->assertSee('Curate repository content')
+            ->assertSee('Other');
+
+        $this->actingAs($administrator)->post(route('projects.store'), $this->validPayload($administrator, [
+            'position_id' => $position->id,
+            'job_description_duties' => ['Curate repository content', 'Train users on digital resources'],
+            'job_description_other' => false,
+        ]))->assertRedirect();
+
+        $project = Project::latest('id')->firstOrFail();
+        $this->assertDatabaseHas('project_job_description_items', [
+            'project_id' => $project->id,
+            'position_job_detail_id' => $detail->id,
+            'duty_text' => 'Curate repository content',
+            'is_other' => false,
+        ]);
+        $this->assertCount(2, $project->jobDescriptionItems);
+    }
+
+    public function test_project_requires_a_valid_job_duty_or_other(): void
+    {
+        $administrator = $this->user('Administrator');
+
+        $this->actingAs($administrator)->post(route('projects.store'), $this->validPayload($administrator, [
+            'job_description_duties' => [],
+            'job_description_other' => false,
+        ]))->assertSessionHasErrors('job_description_duties');
+
+        $this->actingAs($administrator)->post(route('projects.store'), $this->validPayload($administrator, [
+            'job_description_duties' => ['A duty that is not assigned to this user'],
+            'job_description_other' => false,
+        ]))->assertSessionHasErrors('job_description_duties');
+    }
+
     public function test_selected_campus_scope_requires_at_least_one_campus(): void
     {
         $administrator = $this->user('Administrator');
@@ -175,7 +227,7 @@ class ProjectModuleTest extends TestCase
 
         $this->actingAs($administrator)->get(route('projects.index', [
             'search' => 'Modernisation', 'status' => 'in_progress', 'priority' => 'high',
-            'category_id' => $this->category->id, 'campus_id' => $this->campusOne->id,
+            'position_id' => $this->position->id, 'campus_id' => $this->campusOne->id,
             'owner_id' => $administrator->id,
         ]))->assertOk()->assertSee('Repository Modernisation')->assertDontSee('Unrelated Project');
     }
@@ -211,7 +263,7 @@ class ProjectModuleTest extends TestCase
     {
         return array_merge([
             'title' => $creator->getRoleNames()->first().' Project',
-            'project_category_id' => $this->category->id,
+            'position_id' => $this->position->id,
             'description' => 'Project description',
             'scope' => 'university_wide',
             'campus_ids' => [],
@@ -223,6 +275,8 @@ class ProjectModuleTest extends TestCase
             'progress_method' => 'manual',
             'objectives' => 'Project objectives',
             'expected_deliverables' => 'Expected outputs',
+            'job_description_duties' => [],
+            'job_description_other' => true,
         ], $overrides);
     }
 
@@ -234,6 +288,7 @@ class ProjectModuleTest extends TestCase
             'project_code' => 'PRJ-TEST-'.str_pad((string) $this->projectSequence, 4, '0', STR_PAD_LEFT),
             'title' => 'Test Project '.$this->projectSequence,
             'project_category_id' => $this->category->id,
+            'position_id' => $this->position->id,
             'owner_id' => $owner->id,
             'created_by' => $owner->id,
             'start_date' => '2026-09-01',

@@ -19,7 +19,7 @@ class Project extends Model
     public const PROGRESS_METHODS = ['manual', 'tasks', 'milestones', 'deliverables'];
 
     protected $fillable = [
-        'project_code', 'title', 'description', 'project_category_id', 'owner_id',
+        'project_code', 'title', 'description', 'project_category_id', 'position_id', 'owner_id',
         'created_by', 'start_date', 'due_date', 'completed_at', 'scope',
         'priority_level', 'priority_score', 'progress_method', 'progress_percentage',
         'status', 'health_status', 'objectives', 'expected_deliverables', 'is_active',
@@ -40,6 +40,11 @@ class Project extends Model
     public function category()
     {
         return $this->belongsTo(ProjectCategory::class, 'project_category_id');
+    }
+
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
     }
 
     public function owner()
@@ -72,6 +77,11 @@ class Project extends Model
     public function projectMembers()
     {
         return $this->hasMany(ProjectMember::class);
+    }
+
+    public function jobDescriptionItems()
+    {
+        return $this->hasMany(ProjectJobDescriptionItem::class);
     }
 
     public function tasks()

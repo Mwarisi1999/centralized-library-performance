@@ -43,4 +43,9 @@ class Position extends Model
     {
         return $this->hasOne(PositionJobDetail::class);
     }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class);
+    }
 }

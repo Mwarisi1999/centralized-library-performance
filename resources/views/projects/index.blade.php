@@ -51,10 +51,10 @@
                         <option value="{{ $priority }}" @selected(request('priority') === $priority)>{{ App\Models\Project::label($priority) }}</option>
                     @endforeach
                 </select>
-                <select name="category_id" aria-label="Category" class="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
-                    <option value="">All categories</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" @selected((string) request('category_id') === (string) $category->id)>{{ $category->name }}</option>
+                <select name="position_id" aria-label="Position" class="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
+                    <option value="">All positions</option>
+                    @foreach($positions as $position)
+                        <option value="{{ $position->id }}" @selected((string) request('position_id') === (string) $position->id)>{{ $position->name }}</option>
                     @endforeach
                 </select>
                 <select name="campus_id" aria-label="Campus" class="rounded-xl border border-slate-300 px-3 py-2.5 text-sm">
@@ -71,7 +71,7 @@
                 </select>
                 <div class="flex gap-2">
                     <button class="flex-1 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Filter</button>
-                    @if(request()->hasAny(['search', 'status', 'priority', 'category_id', 'campus_id', 'owner_id']))
+                    @if(request()->hasAny(['search', 'status', 'priority', 'position_id', 'campus_id', 'owner_id']))
                         <a href="{{ route('projects.index') }}" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Clear</a>
                     @endif
                 </div>
@@ -82,7 +82,7 @@
             <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
                 <thead class="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                        @foreach(['Project Code', 'Title', 'Category', 'Campus Scope', 'Owner', 'Start Date', 'Due Date', 'Priority', 'Status', 'Progress', 'Actions'] as $heading)
+                        @foreach(['Project Code', 'Title', 'Position', 'Campus Scope', 'Owner', 'Start Date', 'Due Date', 'Priority', 'Status', 'Progress', 'Actions'] as $heading)
                             <th class="whitespace-nowrap px-5 py-3.5">{{ $heading }}</th>
                         @endforeach
                     </tr>
@@ -104,7 +104,7 @@
                         <tr class="hover:bg-slate-50/70">
                             <td class="whitespace-nowrap px-5 py-4 font-mono text-xs font-bold text-slate-700">{{ $project->project_code }}</td>
                             <td class="min-w-64 px-5 py-4"><p class="font-semibold text-slate-900">{{ $project->title }}</p><p class="mt-1 line-clamp-1 text-xs text-slate-500">{{ $project->description ?: 'No description' }}</p></td>
-                            <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ $project->category?->name ?? 'Uncategorised' }}</td>
+                            <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ $project->position?->name ?? $project->category?->name ?? 'Not assigned' }}</td>
                             <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ $scopeLabel }}</td>
                             <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ $project->owner->name }}</td>
                             <td class="whitespace-nowrap px-5 py-4 text-slate-600">{{ $project->start_date->format('d M Y') }}</td>

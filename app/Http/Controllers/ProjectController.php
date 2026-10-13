@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Campus;
+use App\Models\Position;
 use App\Models\Project;
-use App\Models\ProjectCategory;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\ProjectCodeService;
@@ -27,7 +27,7 @@ class ProjectController extends Controller
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(Project::STATUSES)],
             'priority' => ['nullable', Rule::in(Project::PRIORITIES)],
-            'category_id' => ['nullable', 'integer', 'exists:project_categories,id'],
+            'position_id' => ['nullable', 'integer', 'exists:positions,id'],
             'campus_id' => ['nullable', 'integer', 'exists:campuses,id'],
             'owner_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
@@ -35,7 +35,7 @@ class ProjectController extends Controller
         $visibleProjects = Project::query()->visibleTo($request->user());
 
         $projects = (clone $visibleProjects)
-            ->with(['category', 'owner', 'campuses'])
+            ->with(['category', 'position', 'owner', 'campuses'])
             ->when($validated['search'] ?? null, function ($query, $search) {
                 $search = trim($search);
                 $query->where(function ($query) use ($search) {
@@ -46,7 +46,7 @@ class ProjectController extends Controller
             })
             ->when($validated['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($validated['priority'] ?? null, fn ($query, $priority) => $query->where('priority_level', $priority))
-            ->when($validated['category_id'] ?? null, fn ($query, $categoryId) => $query->where('project_category_id', $categoryId))
+            ->when($validated['position_id'] ?? null, fn ($query, $positionId) => $query->where('position_id', $positionId))
             ->when($validated['owner_id'] ?? null, fn ($query, $ownerId) => $query->where('owner_id', $ownerId))
             ->when($validated['campus_id'] ?? null, fn ($query, $campusId) => $query->where(function ($query) use ($campusId) {
                 $query->where('scope', 'university_wide')
@@ -58,7 +58,7 @@ class ProjectController extends Controller
 
         return view('projects.index', [
             'projects' => $projects,
-            'categories' => ProjectCategory::query()->where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::query()->where('is_active', true)->with('jobDetail')->inRankOrder()->get(),
             'campuses' => Campus::query()->where('is_active', true)->orderBy('name')->get(),
             'owners' => User::query()
                 ->whereIn('id', (clone $visibleProjects)->select('owner_id'))
@@ -79,7 +79,7 @@ class ProjectController extends Controller
         Gate::authorize('create', Project::class);
 
         return view('projects.create', [
-            'categories' => ProjectCategory::query()->where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::query()->where('is_active', true)->with('jobDetail')->inRankOrder()->get(),
             'campuses' => Campus::query()->where('is_active', true)->orderBy('name')->get(),
             'activeUsers' => User::query()
                 ->where('account_status', 'active')
@@ -87,6 +87,9 @@ class ProjectController extends Controller
                 ->orderBy('name')
                 ->get(),
             'defaultOwnerId' => $request->user()->id,
+            'selectedPositionId' => null,
+            'selectedJobDescriptionDuties' => [],
+            'selectedJobDescriptionOther' => false,
         ]);
     }
 
@@ -100,7 +103,8 @@ class ProjectController extends Controller
                     'project_code' => $projectCode,
                     'title' => $validated['title'],
                     'description' => $validated['description'] ?? null,
-                    'project_category_id' => $validated['project_category_id'] ?? null,
+                    'project_category_id' => null,
+                    'position_id' => $validated['position_id'],
                     'owner_id' => $validated['owner_id'],
                     'created_by' => $request->user()->id,
                     'start_date' => $validated['start_date'],
@@ -129,6 +133,8 @@ class ProjectController extends Controller
 
                 $project->members()->attach($memberIds);
 
+                $this->syncJobDescriptionItems($project, $validated);
+
                 return $project;
             });
         });
@@ -151,6 +157,7 @@ class ProjectController extends Controller
 
         $project->load([
             'category',
+            'position',
             'owner.roles',
             'creator.roles',
             'campuses',
@@ -159,6 +166,7 @@ class ProjectController extends Controller
             'projectMembers.user.staffProfile.position',
             'projectMembers.user.staffProfile.campus',
             'projectMembers.user.staffProfile.library',
+            'jobDescriptionItems',
         ]);
 
         return view('projects.show', [
@@ -177,7 +185,7 @@ class ProjectController extends Controller
     {
         Gate::authorize('update', $project);
 
-        $project->load(['campuses', 'projectMembers']);
+        $project->load(['campuses', 'projectMembers', 'jobDescriptionItems']);
         $currentUserIds = $project->projectMembers
             ->where('is_active', true)
             ->pluck('user_id')
@@ -186,7 +194,13 @@ class ProjectController extends Controller
 
         return view('projects.edit', [
             'project' => $project,
-            'categories' => ProjectCategory::query()->where('is_active', true)->orderBy('name')->get(),
+            'positions' => Position::query()
+                ->where(fn ($query) => $query
+                    ->where('is_active', true)
+                    ->orWhere('id', $project->position_id))
+                ->with('jobDetail')
+                ->inRankOrder()
+                ->get(),
             'campuses' => Campus::query()->where('is_active', true)->orderBy('name')->get(),
             'availableUsers' => User::query()
                 ->where(function ($query) use ($currentUserIds) {
@@ -196,6 +210,9 @@ class ProjectController extends Controller
                 ->with(['roles', 'staffProfile.campus'])
                 ->orderBy('name')
                 ->get(),
+            'selectedPositionId' => $project->position_id,
+            'selectedJobDescriptionDuties' => $project->jobDescriptionItems->where('is_other', false)->pluck('duty_text')->all(),
+            'selectedJobDescriptionOther' => $project->jobDescriptionItems->contains('is_other', true),
         ]);
     }
 
@@ -210,7 +227,8 @@ class ProjectController extends Controller
             $lockedProject->update([
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
-                'project_category_id' => $validated['project_category_id'] ?? null,
+                'project_category_id' => null,
+                'position_id' => $validated['position_id'],
                 'owner_id' => $validated['owner_id'],
                 'start_date' => $validated['start_date'],
                 'due_date' => $validated['due_date'],
@@ -256,6 +274,8 @@ class ProjectController extends Controller
                 ]);
             }
 
+            $this->syncJobDescriptionItems($lockedProject, $validated);
+
             $progress->recalculate($lockedProject->refresh());
         });
 
@@ -274,5 +294,31 @@ class ProjectController extends Controller
         return redirect()
             ->route('projects.show', $project)
             ->with('success', 'Project updated successfully.');
+    }
+
+    /** Store stable snapshots of the duties used to classify a project. */
+    private function syncJobDescriptionItems(Project $project, array $validated): void
+    {
+        $jobDetail = Position::query()->with('jobDetail')->findOrFail($validated['position_id'])->jobDetail;
+        $currentDuties = collect($jobDetail?->duties ?? []);
+
+        $items = collect($validated['job_description_duties'] ?? [])
+            ->unique()
+            ->map(fn (string $duty) => [
+                'position_job_detail_id' => $currentDuties->containsStrict($duty) ? $jobDetail?->id : null,
+                'duty_text' => $duty,
+                'is_other' => false,
+            ]);
+
+        if ($validated['job_description_other'] ?? false) {
+            $items->push([
+                'position_job_detail_id' => null,
+                'duty_text' => 'Other',
+                'is_other' => true,
+            ]);
+        }
+
+        $project->jobDescriptionItems()->delete();
+        $project->jobDescriptionItems()->createMany($items->all());
     }
 }

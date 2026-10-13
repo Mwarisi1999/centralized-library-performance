@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Campus;
+use App\Models\Position;
 use App\Models\Project;
 use App\Models\ProjectCategory;
 use App\Models\User;
@@ -22,6 +23,8 @@ class ProjectEditingTest extends TestCase
 
     private ProjectCategory $category;
 
+    private Position $position;
+
     private User $creator;
 
     private Project $project;
@@ -36,12 +39,14 @@ class ProjectEditingTest extends TestCase
         $this->firstCampus = Campus::create(['name' => 'First Campus', 'code' => 'FIRST', 'is_active' => true]);
         $this->secondCampus = Campus::create(['name' => 'Second Campus', 'code' => 'SECOND', 'is_active' => true]);
         $this->category = ProjectCategory::firstOrFail();
+        $this->position = Position::create(['name' => 'Systems Librarian', 'code' => 'SYS-LIB', 'is_active' => true]);
         $this->creator = $this->user('Administrator', 'Original Creator');
         $this->project = Project::create([
             'project_code' => 'PRJ-2026-0099',
             'title' => 'Original Project Title',
             'description' => 'Original description',
             'project_category_id' => $this->category->id,
+            'position_id' => $this->position->id,
             'owner_id' => $this->creator->id,
             'created_by' => $this->creator->id,
             'start_date' => '2026-09-01',
@@ -201,7 +206,7 @@ class ProjectEditingTest extends TestCase
     {
         return array_merge([
             'title' => 'Updated Project',
-            'project_category_id' => $this->category->id,
+            'position_id' => $this->position->id,
             'description' => 'Updated description',
             'scope' => 'selected_campuses',
             'campus_ids' => [$this->firstCampus->id],
@@ -213,6 +218,8 @@ class ProjectEditingTest extends TestCase
             'progress_method' => 'manual',
             'objectives' => 'Updated objectives',
             'expected_deliverables' => 'Updated deliverables',
+            'job_description_duties' => [],
+            'job_description_other' => true,
         ], $overrides);
     }
 }
